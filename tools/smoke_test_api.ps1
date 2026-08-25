@@ -6,9 +6,9 @@ function Check($name, $cond, $detail) {
   else { Write-Output ("FAIL  {0} :: {1}" -f $name, $detail); $script:fail++ }
 }
 
-# 1. health
+# 1. health (either store mode is valid)
 $h = Invoke-RestMethod "$base/api/health"
-Check "GET /api/health" ($h.status -eq 'ok' -and $h.store -eq 'memory') ($h | ConvertTo-Json -Compress)
+Check "GET /api/health" ($h.status -eq 'ok' -and ($h.store -eq 'memory' -or $h.store -eq 'mongodb')) ($h | ConvertTo-Json -Compress)
 
 # 2. create session
 $s = Invoke-RestMethod -Method Post -Uri "$base/api/sessions" -ContentType 'application/json' -Body '{"participant_id":"TEST-001","name":"Smoke Test"}'

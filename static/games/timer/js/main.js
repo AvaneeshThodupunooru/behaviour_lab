@@ -118,6 +118,20 @@
     el.btnReturnEvent.href = eventParams.returnUrl.indexOf('session_id=') === -1
       ? eventParams.returnUrl + (eventParams.returnUrl.indexOf('?') === -1 ? '?' : '&') + 'session_id=' + encodeURIComponent(eventParams.sessionId)
       : eventParams.returnUrl;
+    // Always offer an exit back to the event shell once we know the session;
+    // submission status is communicated separately via the status line.
+    el.btnReturnEvent.hidden = false;
+
+    // Shell-driven handoff: the event shell decides which station comes next
+    // and passes it on the URL. The Timer never hardcodes game order.
+    var nextUrl = new URLSearchParams(window.location.search).get('next_url');
+    var nextLabel = new URLSearchParams(window.location.search).get('next_label');
+    var btnNext = document.getElementById('btn-next-game');
+    if (btnNext && nextUrl) {
+      btnNext.href = nextUrl;
+      btnNext.textContent = 'Continue' + (nextLabel ? ': ' + nextLabel : '');
+      btnNext.hidden = false;
+    }
   }
 
   async function submitResultToEvent(sessionResult) {
@@ -136,7 +150,8 @@
     } else {
       el.submitStatus.textContent = 'Could not reach the event server (' + (outcome.error || 'unknown error') + '). Your results are saved on this device — use Retry, or Export as a backup.';
       el.btnRetrySubmit.hidden = false;
-      el.btnReturnEvent.hidden = true;
+      // Return-to-event stays visible so the participant is never trapped;
+      // the shell checklist will still show this station as pending.
     }
   }
 
@@ -588,10 +603,17 @@
     el.pressureIndexValue.textContent = agg.pressure.pressureIndex + '/100';
     el.interpretationLine.textContent = interpretationFor(agg);
 
-    renderHeatmapCanvas(agg.allSamples);
-
+    // Build and submit the session result BEFORE any visualization work so a
+    // rendering problem can never block submission or leaving the game.
     window.__pressureClockSession = buildSessionResult(agg);
     submitResultToEvent(window.__pressureClockSession);
+
+    try {
+      renderHeatmapCanvas(agg.allSamples);
+    } catch (err) {
+      // The heatmap is cosmetic; leave the canvas blank and keep the flow alive.
+      console.warn('Pressure Clock: heatmap rendering failed:', err);
+    }
   }
 
   function renderHeatmapCanvas(allSamples) {

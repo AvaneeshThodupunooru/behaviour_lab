@@ -188,9 +188,41 @@
     showScreen('checklist');
   }
 
-  function navigateToGame(game) {
-    var url = game.path + '?session_id=' + encodeURIComponent(state.sessionId) +
+  function gameUrl(game) {
+    return game.path + '?session_id=' + encodeURIComponent(state.sessionId) +
       '&return_url=' + encodeURIComponent('/');
+  }
+
+  function navigateToGame(game) {
+    var url = gameUrl(game);
+
+    // Shell-driven handoff: decide which station comes next (first incomplete
+    // game after this one in the event order; the report/checklist when none
+    // remain) and pass it to the game so its completion screen can offer a
+    // direct "Continue" jump. Games themselves never hardcode game order.
+    var next = null;
+    var startIndex = -1;
+    for (var si = 0; si < GAME_DEFS.length; si++) {
+      if (GAME_DEFS[si].key === game.key) { startIndex = si; break; }
+    }
+    if (state.sessionDoc && state.sessionDoc.games && startIndex !== -1) {
+      for (var ni = startIndex + 1; ni < GAME_DEFS.length; ni++) {
+        var st = state.sessionDoc.games[GAME_DEFS[ni].key] && state.sessionDoc.games[GAME_DEFS[ni].key].status;
+        if (st !== 'completed') { next = GAME_DEFS[ni]; break; }
+      }
+    }
+    var nextUrl;
+    var nextLabel;
+    if (next) {
+      nextUrl = gameUrl(next);
+      nextLabel = next.label;
+    } else {
+      nextUrl = '/?session_id=' + encodeURIComponent(state.sessionId);
+      nextLabel = 'the event report';
+    }
+    url += '&next_url=' + encodeURIComponent(nextUrl) +
+      '&next_label=' + encodeURIComponent(nextLabel);
+
     window.location.href = url;
   }
 
