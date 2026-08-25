@@ -42,7 +42,7 @@ class CreateSessionRequest(BaseModel):
 @app.get("/api/health")
 def health():
     mongo_ok = store.ping() if using_mongo else False
-    return {"status": "ok", "mongo": mongo_ok, "store": "mongodb" if using_mongo else "memory"}
+    return {"status": "ok", "mongo": mongo_ok, "store": "mongodb" if using_mongo else "memory", "note": store_note}
 
 
 @app.post("/api/sessions")

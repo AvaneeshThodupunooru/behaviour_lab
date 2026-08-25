@@ -90,7 +90,7 @@ class MemoryStore:
 class MongoStore:
     """MongoDB Atlas-backed store."""
 
-    def __init__(self, uri: str, db_name: str = "behavior_lab"):
+    def __init__(self, uri: str, db_name: str = "the-thing"):
         from pymongo import MongoClient
         from pymongo.server_api import ServerApi
 
