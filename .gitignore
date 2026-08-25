@@ -1,3 +1,4 @@
+# --- never commit ---
 .chrome-audit/
 .chrome-debug/
 __pycache__/
@@ -7,3 +8,12 @@ _tmp/
 node_modules/
 dist/
 *.log
+
+# secrets / local config (placeholders live in .env.example)
+.env
+.env.*
+!.env.example
+
+# OS junk
+Thumbs.db
+Desktop.ini
