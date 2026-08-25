@@ -1,0 +1,63 @@
+
+button {
+  padding: 10px 20px;
+  font-size: 1em;
+  margin-top: 15px;
+}
+#imageList li {
+  margin: 4px 0;
+}
+
+/* Experiment screen: full viewport, image centered, aspect-ratio preserved */
+/* Experiment screen: true full-page overlay, independent of body's layout */
+
+
+
+/* Reset default browser spacing so 100vh/100vw is exact */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Experiment screen: true full-page overlay, independent of body's layout */
+#experimentScreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+#posterContainer {
+  width: 100vw;
+  height: calc(100vh - 60px); /* leaves room for the counter below */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+#posterImg {
+  max-width: 96vw;
+  max-height: calc(100vh - 80px);
+  width: auto;
+  height: auto;
+  object-fit: contain; /* preserves aspect ratio; no cropping, no distortion */
+  display: block;
+}
+#posterCounter {
+  text-align: center;
+  color: #555;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-size: 0.9em;
+}

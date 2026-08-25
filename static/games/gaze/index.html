@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gaze Experiment</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://api.gazerecorder.com/GazeCloudAPI.js"></script>
+</head>
+<body>
+
+  <section id="setupScreen">
+    <h1>Setup</h1>
+    <p id="setupStatus">Loading...</p>
+    <ul id="imageList"></ul>
+    <p><span id="trackerStatus">Eye tracker: not yet started</span></p>
+    <button id="startExperimentBtn" disabled>Start Experiment</button>
+  </section>
+
+    <section id="calibrationScreen" style="display:none;">
+    <h1>Calibration</h1>
+    <p id="calibrationStatus">Starting eye tracker...</p>
+  </section>
+
+    <section id="experimentScreen" style="display:none;">
+    <div id="posterContainer"></div>
+    <p id="posterCounter"></p>
+  </section>
+
+    <section id="resultsScreen" style="display:none;">
+    <h1>Experiment Complete</h1>
+    <div id="resultsList"></div>
+    <p id="submitStatus" style="margin-top:14px;font-size:13px;color:#667079;min-height:18px;"></p>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button id="retrySubmitBtn" type="button" hidden>Retry sending to event server</button>
+      <a id="returnEventBtn" href="/" hidden>Return to event</a>
+    </div>
+  </section>
+
+      <script src="https://api.gazerecorder.com/GazeCloudAPI.js"></script>  <!-- in head -->
+  ...
+        <script src="/static/shared/event-client.js"></script>
+        <script src="js/imageLoader.js"></script>
+        <script src="js/gazeTracker.js"></script>
+        <script src="js/dataStore.js"></script>
+        <script src="js/dataStore.js"></script>
+        <script src="js/heatmap.js"></script>
+        <script src="js/experiment.js"></script>
+        <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DEADPAN — Laugh Telemetry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0d;
+    --panel:#15151c;
+    --panel-2:#1c1c26;
+    --line:#2c2c38;
+    --text:#edece6;
+    --muted:#9a9aa4;
+    --calm:#49d6c4;
+    --warn:#ffc857;
+    --alarm:#ff4d5e;
+    --alarm-glow: rgba(255,77,94,0.4);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  /* ===== FULLSCREEN STAGE ===== */
+  #stage{
+    position:fixed; inset:0; background:#000;
+  }
+  video{
+    width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:block;
+  }
+  .alarm-flash{
+    position:fixed; inset:0; pointer-events:none; z-index:30;
+    background: radial-gradient(circle, var(--alarm-glow) 0%, transparent 70%);
+    opacity:0;
+  }
+  .alarm-flash.on{ opacity:1; animation: pulse-flash .6s ease-out; }
+  @keyframes pulse-flash{ 0%{opacity:0;} 15%{opacity:1;} 100%{opacity:0;} }
+
+  .caught-banner{
+    position:fixed; top:22px; left:50%; transform:translateX(-50%) translateY(-14px);
+    background:var(--alarm); color:#2a0508; font-family:'JetBrains Mono',monospace;
+    font-size:13px; font-weight:700; letter-spacing:.1em; padding:10px 20px;
+    border-radius:100px; opacity:0; transition:opacity .2s, transform .2s; z-index:40;
+    text-transform:uppercase; box-shadow:0 6px 20px rgba(255,77,94,0.4);
+  }
+  .caught-banner.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* pre-camera state */
+  .pre-cam{
+    position:fixed; inset:0; z-index:35; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:16px; text-align:center; padding:24px;
+    background: radial-gradient(ellipse 800px 500px at 50% 20%, #1b1b26 0%, transparent 65%), var(--bg);
+  }
+  .pre-cam.hidden{ display:none; }
+  .eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--calm); }
+  .pre-cam h1{ font-size:44px; margin:6px 0 4px; letter-spacing:-0.01em; }
+  .pre-cam p{ color:var(--muted); max-width:420px; font-size:14px; line-height:1.6; margin:0 0 8px; }
+
+  .btn{
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px;
+    padding:12px 22px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .btn:hover{ border-color:#42424f; background:#22222e; }
+  .btn:active{ transform:scale(0.97); }
+  .btn.primary{ background:var(--calm); color:#06201c; border-color:var(--calm); }
+  .btn.primary:hover{ background:#5fe4d2; }
+  .btn.danger{ background:var(--alarm); color:#2a0508; border-color:var(--alarm); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+  .btn.small{ padding:8px 14px; font-size:12px; }
+  .btn.ghost{ background:transparent; }
+
+  /* ===== HUD (top-right corner) ===== */
+  .hud{
+    position:fixed; top:18px; right:18px; z-index:20;
+    display:flex; align-items:center; gap:12px;
+    background:rgba(15,15,20,0.72); backdrop-filter: blur(10px);
+    border:1px solid var(--line); border-radius:16px; padding:12px 16px;
+  }
+  .hud.hidden{ display:none; }
+  .hud-count{ text-align:center; }
+  .hud-count .n{ font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:700; color:var(--alarm); line-height:1; transition: transform .15s; }
+  .hud-count .n.bump{ transform:scale(1.25); }
+  .hud-count .l{ font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+  .hud-gauge{ position:relative; width:46px; height:46px; }
+  .hud-gauge svg{ transform:rotate(-90deg); }
+  .hud-gauge circle{ fill:none; stroke-width:5; }
+  .hud-gauge .track{ stroke:#2c2c38; }
+  .hud-gauge .fill{ stroke:var(--calm); stroke-linecap:round; transition:stroke .15s; }
+  .hud-timer{
+    font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--warn);
+    display:none; padding-left:10px; border-left:1px solid var(--line);
+  }
+  .hud-timer.show{ display:block; }
+
+  /* ===== Top-left mini buttons ===== */
+  .corner-btns{ position:fixed; top:18px; left:18px; z-index:20; display:flex; gap:8px; }
+  .icon-btn{
+    width:42px; height:42px; border-radius:12px; border:1px solid var(--line);
+    background:rgba(15,15,20,0.72); backdrop-filter: blur(10px); color:var(--text);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:17px;
+  }
+  .icon-btn:hover{ border-color:var(--calm); }
+  .hidden{ display:none !important; }
+
+  /* ===== Status pill bottom-left ===== */
+  .status-pill{
+    position:fixed; bottom:18px; left:18px; z-index:20;
+    font-family:'JetBrains Mono',monospace; font-size:11px;
+    background:rgba(15,15,20,0.72); backdrop-filter: blur(10px);
+    border:1px solid var(--line); border-radius:100px; padding:8px 14px;
+    display:flex; align-items:center; gap:8px; color:var(--muted);
+  }
+  .status-dot{ width:7px; height:7px; border-radius:50%; background:var(--calm); box-shadow:0 0 8px var(--calm); }
+  .status-dot.alarm{ background:var(--alarm); box-shadow:0 0 10px var(--alarm); }
+
+  /* ===== Instructions modal ===== */
+  .modal-backdrop{
+    position:fixed; inset:0; z-index:60; background:rgba(6,6,9,0.82); backdrop-filter: blur(4px);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal{
+    background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    max-width:480px; width:100%; padding:28px; max-height:86vh; overflow-y:auto;
+  }
+  .modal h2{ margin:0 0 4px; font-size:24px; }
+  .modal .eyebrow{ margin-bottom:8px; display:block; }
+  .modal ol{ padding-left:20px; margin:16px 0; color:var(--text); }
+  .modal ol li{ margin-bottom:10px; font-size:14px; line-height:1.55; color:#cfcfd6; }
+  .modal ol li b{ color:var(--text); }
+  .modal-actions{ display:flex; gap:10px; margin-top:20px; }
+
+  /* ===== Controls drawer ===== */
+  .drawer-backdrop{
+    position:fixed; inset:0; z-index:45; background:rgba(6,6,9,0.6);
+    opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  .drawer-backdrop.show{ opacity:1; pointer-events:auto; }
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:380px; max-width:92vw; z-index:50;
+    background:var(--panel); border-left:1px solid var(--line);
+    transform:translateX(100%); transition:transform .25s ease;
+    overflow-y:auto; padding:20px;
+  }
+  .drawer.open{ transform:translateX(0); }
+  .drawer-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .drawer-head h3{ margin:0; font-size:16px; }
+
+  .panel-block{ border-top:1px solid var(--line); padding-top:16px; margin-top:16px; }
+  .panel-block:first-of-type{ border-top:none; margin-top:0; padding-top:0; }
+  .field-label{ font-size:11px; color:var(--muted); margin:0 0 8px; text-transform:uppercase; letter-spacing:.1em; font-family:'JetBrains Mono',monospace;}
+  .segmented{ display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .segmented button{
+    flex:1; padding:9px 8px; background:var(--panel-2); border:none; border-right:1px solid var(--line);
+    color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer;
+  }
+  .segmented button:last-child{ border-right:none; }
+  .segmented button.active{ background:var(--calm); color:#06201c; font-weight:700; }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+
+  .log{ max-height:130px; overflow-y:auto; margin-top:12px; }
+  .log-empty{ color:var(--muted); font-size:12px; font-family:'JetBrains Mono',monospace; }
+  .log-item{
+    display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:11px;
+    color:var(--muted); padding:5px 0; border-bottom:1px dashed #26262f;
+  }
+  .log-item .n{ color:var(--alarm); font-weight:700; }
+
+  .deck-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+  .stim-card{
+    position:relative; aspect-ratio:1; border-radius:8px; overflow:hidden; cursor:pointer;
+    border:1px solid var(--line); background:var(--panel-2);
+    display:flex; align-items:center; justify-content:center; padding:6px;
+  }
+  .stim-card:hover{ border-color:var(--calm); }
+  .stim-card img, .stim-card video{ width:100%; height:100%; object-fit:cover; }
+  .stim-card .txt{ font-size:10px; line-height:1.35; text-align:center; font-family:'JetBrains Mono',monospace; }
+  .stim-card .del{
+    position:absolute; top:3px; right:3px; width:18px; height:18px; border-radius:50%;
+    background:rgba(0,0,0,0.6); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center;
+    border:none; cursor:pointer; z-index:2;
+  }
+  .add-tabs{ display:flex; gap:6px; margin:10px 0; }
+  .add-tabs button{
+    flex:1; padding:6px; font-size:11px; font-family:'JetBrains Mono',monospace;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--muted); border-radius:6px; cursor:pointer;
+  }
+  .add-tabs button.active{ color:var(--calm); border-color:var(--calm); }
+  .add-form input[type="text"], .add-form input[type="url"]{
+    width:100%; background:#0b0b0f; border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:9px 10px; font-family:'Space Grotesk',sans-serif; font-size:13px; margin-bottom:8px;
+  }
+  .add-form-section{ display:none; }
+  .add-form-section.active{ display:block; }
+  input[type="file"]{ font-size:12px; color:var(--muted); margin-bottom:8px; }
+
+  /* ===== Fullscreen stimulus overlay ===== */
+  .stim-overlay{
+    position:fixed; inset:0; z-index:38;
+    background:rgba(4,4,6,0.88); backdrop-filter: blur(6px);
+    display:flex; align-items:center; justify-content:center; padding:40px;
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .stim-overlay.show{ opacity:1; pointer-events:auto; }
+  .stim-overlay-inner{ max-width:80vw; max-height:80vh; text-align:center; }
+  .stim-overlay-inner img, .stim-overlay-inner video{ max-width:80vw; max-height:70vh; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,0.6); }
+  .stim-overlay-inner .txt-stim{ font-family:'JetBrains Mono',monospace; font-size:clamp(20px,4vw,40px); line-height:1.4; color:var(--text); max-width:700px; }
+  .stim-close{
+    position:fixed; top:22px; right:22px; z-index:39; width:44px; height:44px; border-radius:50%;
+    background:rgba(15,15,20,0.8); border:1px solid var(--line); color:#fff; font-size:18px; cursor:pointer;
+    display:none;
+  }
+
+  /* ===== Summary overlay ===== */
+  .summary-overlay{
+    position:fixed; inset:0; z-index:55; background:rgba(6,6,9,0.9); backdrop-filter: blur(6px);
+    display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s;
+    flex-direction:column; gap:6px;
+  }
+  .summary-overlay.show{ opacity:1; pointer-events:auto; }
+  .summary-overlay .cap{ color:var(--muted); font-size:14px; letter-spacing:.06em; text-transform:uppercase; font-family:'JetBrains Mono',monospace; }
+  .summary-overlay .big{ font-size:110px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--alarm); line-height:1; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="video" autoplay playsinline muted></video>
+</div>
+<div class="alarm-flash" id="alarmFlash"></div>
+<div class="caught-banner" id="caughtBanner">CAUGHT LAUGHING</div>
+
+<!-- Pre-camera splash -->
+<div class="pre-cam" id="preCam">
+  <div class="eyebrow">FACIAL TELEMETRY LAB</div>
+  <h1>DEADPAN</h1>
+  <p>Try not to laugh. Your webcam watches for smile, jaw-drop, cheek and eye-squint signals and fuses them into one live laugh score — cross the line, it counts.</p>
+  <button class="btn primary" id="startCamBtn">Enable Camera & Start</button>
+</div>
+
+<!-- HUD -->
+<div class="hud hidden" id="hud">
+  <div class="hud-gauge">
+    <svg viewBox="0 0 44 44" width="46" height="46">
+      <circle class="track" cx="22" cy="22" r="18" />
+      <circle class="fill" id="hudGaugeFill" cx="22" cy="22" r="18" stroke-dasharray="113" stroke-dashoffset="113" />
+    </svg>
+  </div>
+  <div class="hud-count">
+    <div class="n mono" id="hudCount">0</div>
+    <div class="l">laughs</div>
+  </div>
+  <div class="hud-timer mono" id="hudTimer">60s</div>
+</div>
+
+<!-- Top-left buttons -->
+<div class="corner-btns hidden" id="cornerBtns">
+  <button class="icon-btn" id="infoBtn" title="How to play">?</button>
+  <button class="icon-btn" id="drawerBtn" title="Controls">☰</button>
+</div>
+
+<!-- Status pill -->
+<div class="status-pill hidden" id="statusPill"><span class="status-dot" id="statusDot"></span><span id="statusText">tracking</span></div>
+
+<!-- Fullscreen stimulus overlay -->
+<button class="stim-close" id="closeStim">✕</button>
+<div class="stim-overlay" id="stimOverlay">
+  <div class="stim-overlay-inner" id="stimOverlayInner"></div>
+</div>
+
+<!-- Summary overlay -->
+<div class="summary-overlay" id="summaryOverlay">
+  <div class="cap">Session complete</div>
+  <div class="big" id="summaryBig">0</div>
+  <div class="cap">times caught laughing</div>
+  <div class="row" style="margin-top:22px;">
+    <button class="btn primary" id="summaryCloseBtn">Back to stage</button>
+  </div>
+</div>
+
+<!-- Instructions modal -->
+<div class="modal-backdrop hidden" id="introModal">
+  <div class="modal">
+    <span class="eyebrow">HOW TO PLAY</span>
+    <h2>Keep a straight face</h2>
+    <ol>
+      <li><b>Enable your camera.</b> Everything runs locally in your browser — video never leaves your device.</li>
+      <li><b>Pick a mode</b> in the controls drawer (☰, top-left): Free Play just counts laughs, Timed Challenge runs a countdown.</li>
+      <li><b>Watch the corner HUD.</b> The ring shows your live laugh score; the number ticks up every time you're caught.</li>
+      <li><b>Load stimulus.</b> Add jokes, GIFs, images or clips to the deck in the drawer, then tap one to throw it fullscreen and try to break yourself (or a friend in the chair).</li>
+      <li><b>A laugh only counts once</b> per outburst — there's a short cooldown after each catch so one laugh doesn't rack up the score twice.</li>
+    </ol>
+    <div class="modal-actions">
+      <button class="btn primary" id="introCloseBtn">Got it — start</button>
+    </div>
+  </div>
+</div>
+
+<!-- Controls drawer -->
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h3>Controls</h3>
+    <button class="icon-btn" id="closeDrawerBtn">✕</button>
+  </div>
+
+  <div class="panel-block">
+    <div class="field-label">Sensitivity</div>
+    <div class="segmented" id="sensSeg">
+      <button data-v="0.32">Low</button>
+      <button data-v="0.22" class="active">Medium</button>
+      <button data-v="0.14">High</button>
+    </div>
+  </div>
+
+  <div class="panel-block">
+    <div class="field-label">Mode</div>
+    <div class="segmented" id="modeSeg">
+      <button data-v="free" class="active">Free Play</button>
+      <button data-v="timed">Timed Challenge</button>
+    </div>
+    <div id="durationRow" style="display:none; margin-top:10px;">
+      <div class="field-label">Duration</div>
+      <div class="segmented" id="durSeg">
+        <button data-v="30">30s</button>
+        <button data-v="60" class="active">60s</button>
+        <button data-v="120">120s</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn primary small" id="startGameBtn">Start Session</button>
+      <button class="btn small" id="resetBtn">Reset</button>
+    </div>
+  </div>
+
+  <div class="panel-block">
+    <div class="field-label">Laugh Log</div>
+    <div class="log" id="log"><div class="log-empty">No laughs logged yet.</div></div>
+  </div>
+
+  <div class="panel-block">
+    <div class="field-label">Stimulus Deck</div>
+    <div class="deck-grid" id="deckGrid"></div>
+    <div class="add-tabs">
+      <button class="active" data-tab="text">Joke</button>
+      <button data-tab="url">Image/GIF URL</button>
+      <button data-tab="file">Upload</button>
+    </div>
+    <div class="add-form">
+      <div class="add-form-section active" data-tab="text">
+        <input type="text" id="jokeInput" placeholder="Type a joke or line…" />
+        <button class="btn small" id="addJokeBtn">Add to deck</button>
+      </div>
+      <div class="add-form-section" data-tab="url">
+        <input type="url" id="urlInput" placeholder="https://example.com/funny.gif" />
+        <button class="btn small" id="addUrlBtn">Add to deck</button>
+      </div>
+      <div class="add-form-section" data-tab="file">
+        <input type="file" id="fileInput" accept="image/*,video/*" />
+        <button class="btn small" id="addFileBtn">Add to deck</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+// ---------- state ----------
+let faceLandmarker = null;
+const video = document.getElementById('video');
+let stream = null;
+let running = false;
+let sessionActive = false;
+let mode = 'free';
+let duration = 60;
+let timeLeft = 60;
+let timerInterval = null;
+
+let threshold = 0.22;
+let smoothScore = 0;
+let laughState = 'idle';
+let riseStartTime = 0;
+let cooldownUntil = 0;
+const SUSTAIN_MS = 100;
+const COOLDOWN_MS = 800;
+
+let laughCount = 0;
+let logEntries = [];
+
+let stimulusDeck = [
+  { type:'text', content:"Why did the scarecrow get a promotion? He was outstanding in his field." },
+  { type:'text', content:"I told my computer I needed a break. Now it won't stop sending me vacation ads." },
+  { type:'text', content:"Parallel lines have so much in common. It's a shame they'll never meet." },
+];
+
+// ---------- DOM refs ----------
+const preCam = document.getElementById('preCam');
+const startCamBtn = document.getElementById('startCamBtn');
+const hud = document.getElementById('hud');
+const cornerBtns = document.getElementById('cornerBtns');
+const statusPill = document.getElementById('statusPill');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const alarmFlash = document.getElementById('alarmFlash');
+const caughtBanner = document.getElementById('caughtBanner');
+const hudGaugeFill = document.getElementById('hudGaugeFill');
+const hudCount = document.getElementById('hudCount');
+const hudTimer = document.getElementById('hudTimer');
+
+const introModal = document.getElementById('introModal');
+const infoBtn = document.getElementById('infoBtn');
+const introCloseBtn = document.getElementById('introCloseBtn');
+
+const drawer = document.getElementById('drawer');
+const drawerBackdrop = document.getElementById('drawerBackdrop');
+const drawerBtn = document.getElementById('drawerBtn');
+const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+
+const startGameBtn = document.getElementById('startGameBtn');
+const resetBtn = document.getElementById('resetBtn');
+const durationRow = document.getElementById('durationRow');
+const logEl = document.getElementById('log');
+const deckGrid = document.getElementById('deckGrid');
+
+const stimOverlay = document.getElementById('stimOverlay');
+const stimOverlayInner = document.getElementById('stimOverlayInner');
+const closeStim = document.getElementById('closeStim');
+
+const summaryOverlay = document.getElementById('summaryOverlay');
+const summaryBig = document.getElementById('summaryBig');
+const summaryCloseBtn = document.getElementById('summaryCloseBtn');
+
+// ---------- model + camera ----------
+async function initModel(){
+  const filesetResolver = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+  faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      delegate: "GPU"
+    },
+    outputFaceBlendshapes: true,
+    runningMode: "VIDEO",
+    numFaces: 1
+  });
+}
+
+async function startCamera(){
+  startCamBtn.disabled = true;
+  startCamBtn.textContent = 'Starting…';
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width:1280, height:720 }, audio:false });
+    video.srcObject = stream;
+    await new Promise(res => video.onloadedmetadata = res);
+    if(!faceLandmarker) await initModel();
+    preCam.classList.add('hidden');
+    hud.classList.remove('hidden');
+    cornerBtns.classList.remove('hidden');
+    statusPill.classList.remove('hidden');
+    statusText.textContent = 'tracking';
+    running = true;
+    requestAnimationFrame(loop);
+    introModal.classList.remove('hidden'); // show how-to-play once camera is live
+  }catch(err){
+    startCamBtn.disabled = false;
+    startCamBtn.textContent = 'Retry';
+    alert('Could not start camera or load the model: ' + (err?.message || err) + '. Check camera permissions and your connection.');
+  }
+}
+
+// ---------- detection loop ----------
+function loop(){
+  if(!running) return;
+  const now = performance.now();
+
+  if(video.readyState >= 2 && faceLandmarker){
+    const result = faceLandmarker.detectForVideo(video, now);
+    let score = 0;
+    if(result.faceBlendshapes && result.faceBlendshapes.length){
+      const cats = result.faceBlendshapes[0].categories;
+      const g = (name) => { const c = cats.find(c => c.categoryName === name); return c ? c.score : 0; };
+      const smile = (g('mouthSmileLeft') + g('mouthSmileRight')) / 2;
+      const cheek = (g('cheekSquintLeft') + g('cheekSquintRight')) / 2;
+      const eye = (g('eyeSquintLeft') + g('eyeSquintRight')) / 2;
+      score = 0.70*smile + 0.18*cheek + 0.12*eye;
+      score = Math.max(0, Math.min(1, score));
+    }
+    smoothScore = smoothScore*0.55 + score*0.45;
+    processLaughState(now);
+    updateGauge(smoothScore);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+function processLaughState(now){
+  if(now < cooldownUntil) return;
+  if(smoothScore >= threshold){
+    if(laughState === 'idle'){
+      laughState = 'rising';
+      riseStartTime = now;
+    }else if(laughState === 'rising' && now - riseStartTime >= SUSTAIN_MS){
+      confirmLaugh(now);
+    }
+  }else{
+    laughState = 'idle';
+  }
+}
+
+function confirmLaugh(now){
+  laughState = 'confirmed';
+  cooldownUntil = now + COOLDOWN_MS;
+  laughCount++;
+  updateCount();
+  triggerAlarmFX();
+  logEntries.unshift({ n: laughCount, peak: Math.round(smoothScore*100), time: new Date().toLocaleTimeString() });
+  renderLog();
+}
+
+function triggerAlarmFX(){
+  statusDot.classList.add('alarm');
+  statusText.textContent = 'caught!';
+  alarmFlash.classList.remove('on'); void alarmFlash.offsetWidth; alarmFlash.classList.add('on');
+  caughtBanner.classList.add('show');
+  setTimeout(()=>{
+    caughtBanner.classList.remove('show');
+    statusDot.classList.remove('alarm');
+    statusText.textContent = 'tracking';
+  }, 900);
+}
+
+function updateGauge(score){
+  const circumference = 113;
+  const offset = circumference - (circumference * score);
+  hudGaugeFill.style.strokeDashoffset = offset;
+  let color = 'var(--calm)';
+  if(score >= threshold) color = 'var(--alarm)';
+  else if(score >= threshold*0.65) color = 'var(--warn)';
+  hudGaugeFill.style.stroke = color;
+}
+
+function updateCount(){
+  hudCount.textContent = laughCount;
+  hudCount.classList.remove('bump'); void hudCount.offsetWidth; hudCount.classList.add('bump');
+}
+
+function renderLog(){
+  if(!logEntries.length){ logEl.innerHTML = '<div class="log-empty">No laughs logged yet.</div>'; return; }
+  logEl.innerHTML = logEntries.slice(0,20).map(e =>
+    `<div class="log-item"><span class="n">#${e.n}</span><span>peak ${e.peak}%</span><span>${e.time}</span></div>`
+  ).join('');
+}
+
+// ---------- session / timer ----------
+function startSession(){
+  sessionActive = true;
+  laughCount = 0; logEntries = [];
+  updateCount(); renderLog();
+  summaryOverlay.classList.remove('show');
+  startGameBtn.textContent = mode==='timed' ? 'Restart' : 'Reset Count';
+  closeDrawer();
+
+  if(mode==='timed'){
+    timeLeft = duration;
+    hudTimer.classList.add('show');
+    hudTimer.textContent = timeLeft + 's';
+    clearInterval(timerInterval);
+    timerInterval = setInterval(()=>{
+      timeLeft--;
+      hudTimer.textContent = Math.max(timeLeft,0) + 's';
+      if(timeLeft <= 0){
+        clearInterval(timerInterval);
+        endSession();
+      }
+    },1000);
+  }else{
+    hudTimer.classList.remove('show');
+  }
+}
+
+function endSession(){
+  sessionActive = false;
+  summaryBig.textContent = laughCount;
+  summaryOverlay.classList.add('show');
+}
+summaryCloseBtn.addEventListener('click', ()=> summaryOverlay.classList.remove('show'));
+
+// ---------- stimulus deck ----------
+function renderDeck(){
+  deckGrid.innerHTML = '';
+  stimulusDeck.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'stim-card';
+    card.innerHTML = `<button class="del" data-idx="${idx}">✕</button>`;
+    if(item.type === 'text'){
+      const t = document.createElement('div'); t.className='txt'; t.textContent = item.content;
+      card.appendChild(t);
+    }else if(item.type === 'image'){
+      const img = document.createElement('img'); img.src = item.content; card.appendChild(img);
+    }else if(item.type === 'video'){
+      const v = document.createElement('video'); v.src = item.content; v.muted = true; card.appendChild(v);
+    }
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.del')) return;
+      deployStimulus(item);
+    });
+    deckGrid.appendChild(card);
+  });
+  deckGrid.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      stimulusDeck.splice(+btn.dataset.idx,1);
+      renderDeck();
+    });
+  });
+}
+
+function deployStimulus(item){
+  stimOverlayInner.innerHTML = '';
+  if(item.type === 'text'){
+    const d = document.createElement('div'); d.className='txt-stim'; d.textContent = item.content;
+    stimOverlayInner.appendChild(d);
+  }else if(item.type === 'image'){
+    const img = document.createElement('img'); img.src = item.content; stimOverlayInner.appendChild(img);
+  }else if(item.type === 'video'){
+    const v = document.createElement('video'); v.src = item.content; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+    stimOverlayInner.appendChild(v);
+  }
+  stimOverlay.classList.add('show');
+  closeStim.style.display = 'block';
+  closeDrawer();
+}
+closeStim.addEventListener('click', ()=>{ stimOverlay.classList.remove('show'); closeStim.style.display = 'none'; });
+
+document.getElementById('addJokeBtn').addEventListener('click', ()=>{
+  const el = document.getElementById('jokeInput');
+  const val = el.value.trim();
+  if(!val) return;
+  stimulusDeck.push({ type:'text', content: val });
+  el.value = '';
+  renderDeck();
+});
+document.getElementById('addUrlBtn').addEventListener('click', ()=>{
+  const el = document.getElementById('urlInput');
+  const val = el.value.trim();
+  if(!val) return;
+  const isVideo = /\.(mp4|webm|mov)(\?|$)/i.test(val);
+  stimulusDeck.push({ type: isVideo ? 'video' : 'image', content: val });
+  el.value = '';
+  renderDeck();
+});
+document.getElementById('addFileBtn').addEventListener('click', ()=>{
+  const el = document.getElementById('fileInput');
+  const f = el.files[0];
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  const isVideo = f.type.startsWith('video');
+  stimulusDeck.push({ type: isVideo ? 'video' : 'image', content: url });
+  el.value = '';
+  renderDeck();
+});
+
+document.querySelectorAll('.add-tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.add-tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.add-form-section').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`.add-form-section[data-tab="${btn.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+// ---------- drawer + modal ----------
+function openDrawer(){ drawer.classList.add('open'); drawerBackdrop.classList.add('show'); }
+function closeDrawer(){ drawer.classList.remove('open'); drawerBackdrop.classList.remove('show'); }
+drawerBtn.addEventListener('click', openDrawer);
+closeDrawerBtn.addEventListener('click', closeDrawer);
+drawerBackdrop.addEventListener('click', closeDrawer);
+
+infoBtn.addEventListener('click', ()=> introModal.classList.remove('hidden'));
+introCloseBtn.addEventListener('click', ()=> introModal.classList.add('hidden'));
+
+// ---------- other controls ----------
+document.getElementById('sensSeg').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#sensSeg button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  threshold = parseFloat(btn.dataset.v);
+});
+
+document.getElementById('modeSeg').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  mode = btn.dataset.v;
+  durationRow.style.display = mode==='timed' ? 'block' : 'none';
+  hudTimer.classList.remove('show');
+  startGameBtn.textContent = 'Start Session';
+});
+
+document.getElementById('durSeg').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#durSeg button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  duration = parseInt(btn.dataset.v);
+});
+
+startCamBtn.addEventListener('click', startCamera);
+startGameBtn.addEventListener('click', startSession);
+resetBtn.addEventListener('click', ()=>{
+  clearInterval(timerInterval);
+  sessionActive = false;
+  laughCount = 0; logEntries = [];
+  updateCount(); renderLog();
+  summaryOverlay.classList.remove('show');
+  hudTimer.classList.remove('show');
+  startGameBtn.textContent = 'Start Session';
+});
+
+renderDeck();
+updateCount();
+</script>
+</body>
+</html>

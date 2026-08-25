@@ -1,0 +1,14 @@
+# Behavior Lab common event backend
+fastapi>=0.115,<1
+uvicorn[standard]>=0.34,<1
+pymongo>=4.10,<5
+python-multipart>=0.0.20,<1
+
+# WobbleWalk video analysis.
+# NOTE: mediapipe is pinned to 0.10.21 because newer releases (>=0.10.3x)
+# removed the legacy mp.solutions API that WobbleWalk's original
+# video_tracking.py is built on. opencv/numpy are pinned to versions
+# compatible with that build (numpy<2).
+mediapipe==0.10.21
+opencv-python-headless==4.10.0.84
+numpy>=1.26,<2

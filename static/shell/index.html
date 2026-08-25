@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Behavior Lab — Event</title>
+  <link rel="stylesheet" href="shell.css" />
+</head>
+<body>
+
+  <div class="topbar">
+    <span class="brand">BEHAVIOR LAB</span>
+    <span id="backendStatus" class="status-pill status-pill--unknown">Checking backend…</span>
+  </div>
+
+  <main id="app">
+
+    <!-- WELCOME -->
+    <section id="screen-welcome" class="screen">
+      <div class="card card--center">
+        <h1>Behavior Lab</h1>
+        <p class="muted">Four short game stations. Each participant gets one session that follows them through all four.</p>
+        <button id="btnStart" class="btn btn--primary btn--large">Start new participant</button>
+      </div>
+    </section>
+
+    <!-- PARTICIPANT INFO -->
+    <section id="screen-participant" class="screen" hidden>
+      <div class="card">
+        <h2>Participant information</h2>
+        <form id="participantForm">
+          <label for="participantId">Participant ID <span class="req">*</span></label>
+          <input id="participantId" name="participantId" type="text" placeholder="STU-00123" required autocomplete="off" />
+
+          <label for="participantName">Name (optional)</label>
+          <input id="participantName" name="participantName" type="text" placeholder="Optional" autocomplete="off" />
+
+          <p id="participantError" class="error" hidden></p>
+
+          <div class="actions">
+            <button type="button" id="btnBackToWelcome" class="btn btn--ghost">Back</button>
+            <button type="submit" id="btnCreateSession" class="btn btn--primary">Create session</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- CHECKLIST -->
+    <section id="screen-checklist" class="screen" hidden>
+      <div class="card">
+        <div class="checklist-head">
+          <div>
+            <h2>Session <span id="sessionIdLabel" class="mono"></span></h2>
+            <p class="muted" id="participantLabel"></p>
+          </div>
+          <button id="btnRefreshStatus" class="btn btn--ghost btn--small">Refresh status</button>
+        </div>
+
+        <ul id="gameList" class="game-list"></ul>
+
+        <div class="actions actions--spread">
+          <button id="btnStartNewParticipant" class="btn btn--ghost">Start new participant</button>
+          <div class="actions">
+            <button id="btnFinishSession" class="btn btn--ghost">Finish session</button>
+            <button id="btnContinue" class="btn btn--primary btn--large">Continue</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINAL REPORT -->
+    <section id="screen-report" class="screen" hidden>
+      <div class="card">
+        <h2>Final report</h2>
+        <p class="muted" id="reportMeta"></p>
+        <p id="reportDisclaimer" class="disclaimer"></p>
+        <div id="reportBody" class="report-body"></div>
+        <div class="actions actions--spread">
+          <button id="btnBackToChecklist" class="btn btn--ghost">Back to checklist</button>
+          <button id="btnNewParticipantFromReport" class="btn btn--primary">Start new participant</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/static/shared/event-client.js"></script>
+  <script src="shell.js"></script>
+</body>
+</html>

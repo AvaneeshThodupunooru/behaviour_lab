@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>The Pressure Clock</title>
+<link rel="stylesheet" href="styles.css" />
+<script>
+  // WebGazer recognises `localhost` as a development-safe origin but not
+  // the equivalent 127.0.0.1 address. Keep local launches on localhost.
+  if (location.hostname === '127.0.0.1') {
+    location.replace(location.href.replace('//127.0.0.1', '//localhost'));
+  }
+</script>
+</head>
+<body>
+
+  <!-- Gaze tracker status banner (only shown if tracking is unavailable) -->
+  <div id="gaze-status" class="gaze-status" hidden></div>
+
+  <!-- Temporary gaze diagnostic overlay for evaluating tracker accuracy. -->
+  <div id="gaze-debug" class="gaze-debug" hidden aria-hidden="true">
+    <span id="gaze-debug-dot" class="gaze-debug-dot"></span>
+    <span id="gaze-debug-label" class="gaze-debug-label">GAZE --</span>
+  </div>
+
+  <!-- Fixed countdown timer, top-right. This exact box is what the ROI in
+       js/roi.js is defined against: {xMin:0.80, yMin:0, xMax:1.0, yMax:0.20} -->
+  <div id="timer-hud" class="timer-hud" hidden>
+    <div class="timer-value-wrap">
+      <span id="timer-value-sec">45</span><span id="timer-value-ms">.00</span>
+    </div>
+  </div>
+
+  <main id="app">
+
+    <!-- START -->
+    <section id="screen-start" class="screen screen--active">
+      <div class="panel panel--start">
+        <p class="eyebrow">THE PRESSURE CLOCK</p>
+        <h1>A quick word search.</h1>
+        <p class="body-text">
+          Complete the following tasks as accurately and quickly as you can.
+          Find the hidden words before the clock runs out.
+        </p>
+        <p class="body-text body-text--muted">
+          This session records your interactions for a demo. You'll be able
+          to review and export everything it collected at the end.
+        </p>
+        <button id="btn-start" class="btn btn--primary">Begin</button>
+      </div>
+    </section>
+
+    <!-- CALIBRATION -->
+    <section id="screen-calibration" class="screen">
+      <div class="calibration-panel">
+        <p class="eyebrow">EYE-TRACKER SETUP</p>
+        <h2>Follow the dot with your eyes.</h2>
+        <p id="calibration-instruction" class="body-text">Starting the camera…</p>
+        <button id="calibration-target" class="calibration-target" type="button" hidden aria-label="Calibration point"></button>
+        <p id="calibration-progress" class="body-text body-text--muted"></p>
+        <div class="calibration-actions">
+          <button id="btn-calibration-retry" class="btn btn--ghost" type="button" hidden>Try again</button>
+          <button id="btn-calibration-continue" class="btn btn--primary" type="button" hidden>Start game</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROUND INSTRUCTION / TRANSITION -->
+    <section id="screen-transition" class="screen">
+      <div class="panel panel--transition">
+        <p id="transition-eyebrow" class="eyebrow">ROUND 1</p>
+        <h2 id="transition-title">Get ready</h2>
+        <p id="transition-body" class="body-text"></p>
+        <div id="transition-countdown" class="transition-countdown">3</div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="screen-game" class="screen">
+      <div id="instruction" class="instruction"></div>
+      <div class="wordsearch-layout">
+        <div id="wordsearch-grid" class="wordsearch-grid"></div>
+        <ul id="word-list" class="word-list"></ul>
+      </div>
+    </section>
+
+    <!-- REVEAL -->
+    <section id="screen-reveal" class="screen">
+      <div id="reveal-container" class="reveal-container"></div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="screen-results" class="screen">
+      <div class="panel panel--results">
+        <p class="eyebrow">YOUR PRESSURE PROFILE</p>
+        <div class="results-grid">
+          <table id="metrics-table" class="metrics-table"></table>
+          <div class="pressure-index-box">
+            <div class="pressure-index-label">PRESSURE INDEX</div>
+            <div id="pressure-index-value" class="pressure-index-value">--/100</div>
+            <div class="pressure-index-disclaimer">Experimental behavioral score, not a clinical measure.</div>
+            <p id="interpretation-line" class="interpretation-line"></p>
+          </div>
+        </div>
+
+        <div class="heatmap-section">
+          <p class="heatmap-label">Your gaze map</p>
+          <canvas id="heatmap-canvas" class="heatmap-canvas"></canvas>
+          <p class="heatmap-caption">Warmer colors mark where your eyes spent the most time.</p>
+        </div>
+
+        <p id="submit-status" class="body-text body-text--muted submit-status"></p>
+        <div class="results-actions">
+          <button id="btn-export" class="btn btn--secondary">Export session JSON</button>
+          <button id="btn-retry-submit" class="btn btn--secondary" hidden>Retry sending to event server</button>
+          <a id="btn-return-event" class="btn btn--primary" href="/" hidden>Return to event</a>
+          <button id="btn-restart" class="btn btn--ghost">Run again</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- WebGazer.js — webcam-based gaze estimation, no install required.
+       Loaded from a CDN; gaze-pipeline.js fails soft if this is blocked. -->
+  <script src="https://cdn.jsdelivr.net/npm/webgazer@2.1.0/dist/webgazer.min.js"></script>
+
+  <!-- Pure, independently unit-testable modules -->
+  <script src="js/roi.js"></script>
+  <script src="js/metrics.js"></script>
+  <script src="js/trial-logger.js"></script>
+
+  <!-- Browser-only modules -->
+  <script src="js/gaze-pipeline.js"></script>
+  <script src="js/wordsearch.js"></script>
+  <script src="js/heatmap.js"></script>
+  <script src="js/reveal.js"></script>
+
+  <!-- Shared helper for talking to the common event backend -->
+  <script src="/static/shared/event-client.js"></script>
+
+  <!-- App orchestration -->
+  <script src="js/main.js"></script>
+</body>
+</html>
