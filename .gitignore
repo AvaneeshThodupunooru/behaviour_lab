@@ -1,0 +1,9 @@
+.chrome-audit/
+.chrome-debug/
+__pycache__/
+*.pyc
+.venv/
+_tmp/
+node_modules/
+dist/
+*.log
