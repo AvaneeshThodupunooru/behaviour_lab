@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Behavior Lab — Leaderboard</title>
+  <link rel="stylesheet" href="/shell.css" />
+  <style>
+    .leaderboard-wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px; }
+    .leaderboard-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .leaderboard-head h1 { margin: 0; font-size: 28px; }
+    .leaderboard-head p { margin: 6px 0 0; color: var(--muted); }
+    .updated { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+    table { width: 100%; border-collapse: collapse; min-width: 660px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font: 600 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    .rank, .score { font-weight: 800; }
+    .score { color: var(--good); font-size: 16px; }
+    .breakdown { color: var(--muted); font: 12px var(--font-mono); }
+    .empty { padding: 28px; color: var(--muted); text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="topbar"><span class="brand">BEHAVIOR LAB</span><span class="status-pill status-pill--ok">Live leaderboard</span></div>
+  <main class="leaderboard-wrap">
+    <div class="leaderboard-head">
+      <div><h1>Performance leaderboard</h1><p>Completed event sessions only. Refreshes every 10 seconds.</p></div>
+      <span id="updated" class="updated">Loading…</span>
+    </div>
+    <div class="table-wrap">
+      <table aria-label="Behavior Lab leaderboard">
+        <thead><tr><th>Rank</th><th>Participant</th><th>Overall</th><th>Game scores</th></tr></thead>
+        <tbody id="leaderboard-body"><tr><td colspan="4" class="empty">Loading leaderboard…</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var body = document.getElementById('leaderboard-body');
+      var updated = document.getElementById('updated');
+      function score(value) { return Number(value || 0).toFixed(1); }
+      function participant(entry) {
+        var p = entry.participant || {};
+        return p.name ? p.name + ' (' + (p.participant_id || entry.session_id) + ')' : (p.participant_id || entry.session_id);
+      }
+      function render(entries) {
+        body.innerHTML = '';
+        if (!entries.length) {
+          body.innerHTML = '<tr><td colspan="4" class="empty">No completed sessions yet.</td></tr>';
+          return;
+        }
+        entries.forEach(function (entry, index) {
+          var scores = entry.scores || {};
+          var row = document.createElement('tr');
+          var rank = document.createElement('td');
+          rank.className = 'rank';
+          rank.textContent = index + 1;
+          var name = document.createElement('td');
+          name.textContent = participant(entry);
+          var overall = document.createElement('td');
+          overall.className = 'score';
+          overall.textContent = score(entry.overall_score) + ' / 100';
+          var breakdown = document.createElement('td');
+          breakdown.className = 'breakdown';
+          breakdown.textContent = 'Timer ' + score(scores.timer) + ' · Gaze ' + score(scores.gaze) + ' · Walk ' + score(scores.wobblewalk) + ' · DEADPAN ' + score(scores.deadpan);
+          row.append(rank, name, overall, breakdown);
+          body.appendChild(row);
+        });
+      }
+      async function load() {
+        try {
+          var response = await fetch('/api/leaderboard');
+          if (!response.ok) throw new Error('Server returned ' + response.status);
+          render(await response.json());
+          updated.textContent = 'Updated ' + new Date().toLocaleTimeString();
+        } catch (error) {
+          body.innerHTML = '<tr><td colspan="4" class="empty">Could not load leaderboard: ' + error.message + '</td></tr>';
+          updated.textContent = 'Waiting to retry…';
+        }
+      }
+      load();
+      setInterval(load, 10000);
+    })();
+  </script>
+</body>
+</html>

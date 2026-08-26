@@ -24,10 +24,16 @@ from .report import build_report
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
+# MemoryStore crash-recovery backup (used only when MONGODB_URI is not set).
+BACKUP_PATH = BASE_DIR / "data" / "sessions_backup.json"
 
 app = FastAPI(title="Behavior Lab Event Backend", version="1.0.0")
 
 store, using_mongo, store_note = build_store()
+if not using_mongo:
+    restored = store.load_from_file(str(BACKUP_PATH))
+    if restored:
+        print(f"[behavior-lab] Restored {restored} session(s) from {BACKUP_PATH}", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +84,12 @@ def complete_session(session_id: str):
     updated = store.complete_session(session_id)
     if updated is None:
         raise HTTPException(404, f"No session found for id {session_id!r}")
+    if not using_mongo:
+        # Best-effort full-overwrite dump; never fail the API call over it.
+        try:
+            store.dump_to_file(str(BACKUP_PATH))
+        except OSError:
+            pass
     return updated
 
 
@@ -87,6 +99,28 @@ def get_report(session_id: str):
     if doc is None:
         raise HTTPException(404, f"No session found for id {session_id!r}")
     return build_report(doc)
+
+
+@app.get("/api/leaderboard")
+def get_leaderboard():
+    entries = []
+    for session_doc in store.list_sessions():
+        # A session can be manually marked complete before all game results
+        # arrive, so require both its completion timestamp and all four reports.
+        if not session_doc.get("completed_at"):
+            continue
+        report = build_report(session_doc)
+        if len(report["games_completed"]) != len(GAME_KEYS) or report["overall_score"] is None:
+            continue
+        entries.append({
+            "session_id": session_doc.get("session_id"),
+            "participant": session_doc.get("participant"),
+            "overall_score": report["overall_score"],
+            "started_at": session_doc.get("started_at"),
+            "completed_at": session_doc.get("completed_at"),
+            "scores": {key: report["summary"][key]["score"] for key in GAME_KEYS},
+        })
+    return sorted(entries, key=lambda entry: entry["overall_score"], reverse=True)
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +141,8 @@ app.mount("/wobblewalk-api", wobblewalk_app)
 app.mount("/static/shared", StaticFiles(directory=str(STATIC_DIR / "shared")), name="shared")
 app.mount("/games/timer", StaticFiles(directory=str(STATIC_DIR / "games" / "timer"), html=True), name="timer")
 app.mount("/games/gaze", StaticFiles(directory=str(STATIC_DIR / "games" / "gaze"), html=True), name="gaze")
+app.mount("/games/gaze-timer", StaticFiles(directory=str(STATIC_DIR / "games" / "gaze-timer"), html=True), name="gaze-timer")
 app.mount("/games/deadpan", StaticFiles(directory=str(STATIC_DIR / "games" / "deadpan"), html=True), name="deadpan")
 app.mount("/games/wobblewalk", StaticFiles(directory=str(STATIC_DIR / "games" / "wobblewalk"), html=True), name="wobblewalk")
+app.mount("/leaderboard", StaticFiles(directory=str(STATIC_DIR / "leaderboard"), html=True), name="leaderboard")
 app.mount("/", StaticFiles(directory=str(STATIC_DIR / "shell"), html=True), name="shell")

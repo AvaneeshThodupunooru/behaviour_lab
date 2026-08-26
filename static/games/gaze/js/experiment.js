@@ -1,5 +1,6 @@
 const Experiment = (function () {
-  const POSTER_DURATION_MS = 7000;
+  // Four posters × five seconds = the merged station's 20-second phase.
+  const POSTER_DURATION_MS = 5000;
   let images = [];
   let currentIndex = 0;
   let currentImgEl = null;

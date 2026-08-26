@@ -9,6 +9,9 @@ node_modules/
 dist/
 *.log
 
+# runtime session backups (MemoryStore crash recovery)
+data/
+
 # secrets / local config (placeholders live in .env.example)
 .env
 .env.*

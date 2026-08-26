@@ -13,6 +13,7 @@ one it's talking to.
 from __future__ import annotations
 
 import datetime
+import json
 import os
 import threading
 from typing import Optional
@@ -86,6 +87,50 @@ class MemoryStore:
             doc["completed_at"] = _now_iso()
             return dict(doc)
 
+    def list_sessions(self) -> list[dict]:
+        with self._lock:
+            return list(self._sessions.values())
+
+    # -------------------------------------------------------------------
+    # Crash-recovery backup for expo use without MongoDB: a full JSON
+    # snapshot of every session, rewritten after each completed session.
+    # Writes go to a temp file + atomic rename so a hard kill can never
+    # leave a half-written backup behind.
+    # -------------------------------------------------------------------
+
+    def dump_to_file(self, path: str) -> None:
+        with self._lock:
+            payload = {
+                "counter": self._counter,
+                "sessions": list(self._sessions.values()),
+            }
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        tmp_path = path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, ensure_ascii=False)
+        os.replace(tmp_path, path)
+
+    def load_from_file(self, path: str) -> int:
+        """Restore sessions saved by dump_to_file. Returns the count restored
+        (0 when the file is missing or unreadable - never raises)."""
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                payload = json.load(fh)
+            sessions = [s for s in (payload.get("sessions") or []) if isinstance(s, dict) and s.get("session_id")]
+        except FileNotFoundError:
+            return 0
+        except (OSError, ValueError):
+            return 0
+        counter = payload.get("counter")
+        if not isinstance(counter, int) or counter < 0:
+            counter = 0
+        with self._lock:
+            self._sessions = {s["session_id"]: s for s in sessions}
+            self._counter = max(counter, len(self._sessions))
+        return len(self._sessions)
+
 
 class MongoStore:
     """MongoDB Atlas-backed store."""
@@ -154,6 +199,9 @@ class MongoStore:
             return_document=True,
         )
         return updated
+
+    def list_sessions(self) -> list[dict]:
+        return list(self._sessions.find({}, {"_id": 0}))
 
 
 def build_store():

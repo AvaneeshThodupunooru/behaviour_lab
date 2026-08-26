@@ -2,8 +2,8 @@
   'use strict';
 
   var GAME_DEFS = [
-    { key: 'timer', label: 'Pressure Clock (Timer)', path: '/games/timer/' },
-    { key: 'gaze', label: 'Gaze Experiment', path: '/games/gaze/' },
+    { key: 'timer', label: 'Pressure Clock (Timer)', path: '/games/gaze-timer/' },
+    { key: 'gaze', label: 'Gaze Experiment', path: '/games/gaze-timer/' },
     { key: 'wobblewalk', label: 'WobbleWalk', path: '/games/wobblewalk/' },
     { key: 'deadpan', label: 'DEADPAN (Try Not to Laugh)', path: '/games/deadpan/' }
   ];
@@ -205,10 +205,22 @@
     for (var si = 0; si < GAME_DEFS.length; si++) {
       if (GAME_DEFS[si].key === game.key) { startIndex = si; break; }
     }
-    if (state.sessionDoc && state.sessionDoc.games && startIndex !== -1) {
+    if (game.path === '/games/gaze-timer/') {
+      // The two checklist rows are completed by one station. Its explicit
+      // continuation is Deadpan, never the duplicate station URL.
+      for (var di = 0; di < GAME_DEFS.length; di++) {
+        if (GAME_DEFS[di].key === 'deadpan') {
+          next = GAME_DEFS[di];
+          break;
+        }
+      }
+    } else if (state.sessionDoc && state.sessionDoc.games && startIndex !== -1) {
       for (var ni = startIndex + 1; ni < GAME_DEFS.length; ni++) {
         var st = state.sessionDoc.games[GAME_DEFS[ni].key] && state.sessionDoc.games[GAME_DEFS[ni].key].status;
-        if (st !== 'completed') { next = GAME_DEFS[ni]; break; }
+        if (st !== 'completed') {
+          next = GAME_DEFS[ni];
+          break;
+        }
       }
     }
     var nextUrl;
@@ -283,6 +295,15 @@
     el.reportDisclaimer.textContent = report.disclaimer || '';
 
     el.reportBody.innerHTML = '';
+    var overall = document.createElement('div');
+    overall.className = 'overall-score';
+    if (report.overall_score === null || report.overall_score === undefined) {
+      overall.textContent = 'Overall performance score will appear after all four games are completed.';
+    } else {
+      overall.textContent = 'Overall performance score: ' + report.overall_score.toFixed(1) + ' / ' + (report.max_score || 100);
+    }
+    el.reportBody.appendChild(overall);
+
     GAME_ORDER_FOR_REPORT.forEach(function (key) {
       var summary = report.summary && report.summary[key];
       var card = document.createElement('div');
@@ -291,6 +312,13 @@
       var heading = document.createElement('h3');
       heading.textContent = (summary && summary.label) || key;
       card.appendChild(heading);
+
+      if (summary && summary.score !== undefined && summary.score !== null) {
+        var score = document.createElement('div');
+        score.className = 'game-score';
+        score.textContent = 'Performance score: ' + Number(summary.score).toFixed(1) + ' / 25';
+        card.appendChild(score);
+      }
 
       if (!summary) {
         var missing = document.createElement('p');
@@ -302,9 +330,16 @@
         unavailable.className = 'missing';
         unavailable.textContent = 'Recorded, but metrics could not be computed' + (summary.reason ? ' (' + summary.reason + ').' : '.');
         card.appendChild(unavailable);
+        if (summary.note) {
+          var unavailableNote = document.createElement('p');
+          unavailableNote.className = 'missing';
+          unavailableNote.style.marginTop = '10px';
+          unavailableNote.textContent = summary.note;
+          card.appendChild(unavailableNote);
+        }
       } else {
         var entries = Object.keys(summary)
-          .filter(function (k) { return k !== 'label' && k !== 'note'; })
+          .filter(function (k) { return k !== 'label' && k !== 'note' && k !== 'score'; })
           .map(function (k) { return [k, summary[k]]; });
         card.appendChild(renderMetricGrid(entries));
         if (summary.note) {
