@@ -32,29 +32,37 @@ py -3.9 -m venv .venv
 
 ## 3. Configure MongoDB (optional but recommended for the event)
 
-The backend reads `MONGODB_URI` from the process environment — see
-`.env.example` for placeholders. Never commit real credentials.
+Copy the example file and edit it:
 
-PowerShell:
-```powershell
-$env:MONGODB_URI = "mongodb+srv://<user>:<password>@<cluster-host>.mongodb.net/?retryWrites=true&w=majority"
-```
-
-CMD:
 ```bat
-set MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-host>.mongodb.net/?retryWrites=true&w=majority
+copy .env.example .env
+notepad .env
 ```
 
-- Omit the variable to run in MemoryStore mode (results lost on restart).
+Set the one required value (single line, no quotes):
+
+```
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/
+```
+
+The backend loads this `.env` automatically at startup. Never commit it — it is
+git-ignored.
+
+- If `.env` is missing, empty, or Atlas is unreachable, the server still starts
+  and uses the in-memory store (results lost on restart).
 - Database name is fixed to `the-thing`; collections and indexes are created
   automatically on first connect.
+- Optional alternative: a shell environment variable still works and takes
+  precedence over `.env`
+  (`$env:MONGODB_URI = "..."` in PowerShell, `set MONGODB_URI=...` in CMD).
 - Atlas checklist: create project → M0 cluster (≥ MongoDB 5.0) → database user
   with read/write → **Network Access: add this laptop's public IP** (or
   `0.0.0.0/0` for the event day).
 
 Verify after starting: `http://localhost:8000/api/health` should show
-`"store":"mongodb","mongo":true`. If it shows `"memory"`, the `note` field
-explains why.
+`"store":"mongodb","mongo":true`. If it shows `"memory"`, the `note` field says
+whether the URI was missing or the connection failed (full detail is printed in
+the server console, never over HTTP).
 
 ## 4. Run
 

@@ -25,9 +25,32 @@ from .report import build_report
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
 
+# Runtime configuration comes from the project-root .env when present. Loaded
+# BEFORE build_store() reads MONGODB_URI. A missing file (or a missing
+# python-dotenv install) is a harmless no-op, and real shell environment
+# variables always take precedence over the file.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(BASE_DIR / ".env")
+except ImportError:  # pragma: no cover - fall back to shell environment only
+    pass
+
 app = FastAPI(title="Behavior Lab Event Backend", version="1.0.0")
 
 store, using_mongo, store_note = build_store()
+if store_note:
+    print(f"[behavior-lab] store: {store_note}")
+
+# The raw note can contain connection details (e.g. the Atlas host), so only a
+# coarse, credential-free status is ever exposed over HTTP.
+PUBLIC_STORE_NOTE: Optional[str] = None
+if not using_mongo:
+    PUBLIC_STORE_NOTE = (
+        "MONGODB_URI not set"
+        if store_note == "MONGODB_URI not set"
+        else "Mongo connection failed - using in-memory store (see server log)"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -42,7 +65,7 @@ class CreateSessionRequest(BaseModel):
 @app.get("/api/health")
 def health():
     mongo_ok = store.ping() if using_mongo else False
-    return {"status": "ok", "mongo": mongo_ok, "store": "mongodb" if using_mongo else "memory", "note": store_note}
+    return {"status": "ok", "mongo": mongo_ok, "store": "mongodb" if using_mongo else "memory", "note": PUBLIC_STORE_NOTE}
 
 
 @app.post("/api/sessions")
