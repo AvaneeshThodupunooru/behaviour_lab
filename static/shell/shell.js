@@ -359,6 +359,9 @@
   async function showReport() {
     if (!state.sessionId) return;
     try {
+      // Ensure the session is marked complete so the leaderboard and backup
+      // reflect it.  Harmless if already complete (just re-sets the timestamp).
+      await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/complete', { method: 'POST' }).catch(function () {});
       var res = await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/report');
       var data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Could not load the report.');

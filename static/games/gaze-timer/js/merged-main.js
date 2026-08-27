@@ -5,12 +5,20 @@
   var calibrationStatus = document.getElementById('merged-calibration-status');
   var startButton = document.getElementById('merged-start');
   var experimentScreen = document.getElementById('experimentScreen');
+  var timerApp = document.getElementById('app');
   var completedGazeResult = null;
   var images = [];
   var eventParams = EventClient.getParams();
 
+  // Retry any results stranded in localStorage from a prior failed submission.
+  if (eventParams.sessionId) {
+    EventClient.flushPending(eventParams.sessionId, 'gaze', { apiBase: eventParams.apiBase });
+    EventClient.flushPending(eventParams.sessionId, 'timer', { apiBase: eventParams.apiBase });
+  }
+
   function showGazePhase() {
     calibrationScreen.hidden = true;
+    timerApp.hidden = true;
     experimentScreen.style.display = 'flex';
   }
 
@@ -25,6 +33,7 @@
 
   function startTimerPhase() {
     experimentScreen.style.display = 'none';
+    timerApp.hidden = false;
     completedGazeResult = gazeResult();
     document.getElementById('btn-start').click();
   }

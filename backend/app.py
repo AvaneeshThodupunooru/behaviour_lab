@@ -14,6 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
@@ -26,6 +27,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
 # MemoryStore crash-recovery backup (used only when MONGODB_URI is not set).
 BACKUP_PATH = BASE_DIR / "data" / "sessions_backup.json"
+
+# Load MONGODB_URI (and any other credentials) from the repo-root .env file
+# BEFORE build_store() reads the environment below.
+load_dotenv(BASE_DIR / ".env")
 
 app = FastAPI(title="Behavior Lab Event Backend", version="1.0.0")
 
@@ -76,6 +81,11 @@ def submit_game_result(session_id: str, game: str, result: dict):
     if existing is None:
         raise HTTPException(404, f"No session found for id {session_id!r}")
     updated = store.submit_game_result(session_id, game, result)
+    if not using_mongo:
+        try:
+            store.dump_to_file(str(BACKUP_PATH))
+        except OSError:
+            pass
     return {"status": "ok", "session_id": session_id, "game": game}
 
 

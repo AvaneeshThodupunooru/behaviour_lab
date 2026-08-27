@@ -3,6 +3,7 @@ fastapi>=0.115,<1
 uvicorn[standard]>=0.34,<1
 pymongo>=4.10,<5
 python-multipart>=0.0.20,<1
+python-dotenv>=1.0,<2
 
 # WobbleWalk video analysis.
 # NOTE: mediapipe is pinned to 0.10.21 because newer releases (>=0.10.3x)

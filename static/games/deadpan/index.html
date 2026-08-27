@@ -591,6 +591,11 @@ const eventParams = (typeof EventClient !== 'undefined')
   ? EventClient.getParams()
   : { sessionId: '', apiBase: '', returnUrl: '/' };
 
+// Retry any result stranded in localStorage from a prior failed submission.
+if (typeof EventClient !== 'undefined' && eventParams.sessionId) {
+  EventClient.flushPending(eventParams.sessionId, 'deadpan', { apiBase: eventParams.apiBase });
+}
+
 function buildSessionResult(){
   const peakScorePct = logEntries.reduce((max, e) => Math.max(max, e.peak || 0), 0);
   return {
@@ -739,7 +744,10 @@ closeDrawerBtn.addEventListener('click', closeDrawer);
 drawerBackdrop.addEventListener('click', closeDrawer);
 
 infoBtn.addEventListener('click', ()=> introModal.classList.remove('hidden'));
-introCloseBtn.addEventListener('click', ()=> introModal.classList.add('hidden'));
+introCloseBtn.addEventListener('click', ()=>{
+  introModal.classList.add('hidden');
+  startSession();
+});
 
 // ---------- other controls ----------
 document.getElementById('sensSeg').addEventListener('click', (e)=>{
