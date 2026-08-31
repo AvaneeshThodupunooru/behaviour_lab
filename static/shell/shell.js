@@ -2,10 +2,8 @@
   'use strict';
 
   var GAME_DEFS = [
-    { key: 'timer', label: 'Pressure Clock (Timer)', path: '/games/timer/' },
-    { key: 'gaze', label: 'Gaze Experiment', path: '/games/gaze/' },
-    { key: 'wobblewalk', label: 'WobbleWalk', path: '/games/wobblewalk/' },
-    { key: 'deadpan', label: 'DEADPAN (Try Not to Laugh)', path: '/games/deadpan/' }
+    { key: 'timer', label: 'Gaze + Pressure Clock', path: '/games/gaze-timer/' },
+    { key: 'deadpan', label: 'DEADPAN — Try Not to Laugh', path: '/games/deadpan/' }
   ];
 
   var state = {
@@ -195,11 +193,6 @@
 
   function navigateToGame(game) {
     var url = gameUrl(game);
-
-    // Shell-driven handoff: decide which station comes next (first incomplete
-    // game after this one in the event order; the report/checklist when none
-    // remain) and pass it to the game so its completion screen can offer a
-    // direct "Continue" jump. Games themselves never hardcode game order.
     var next = null;
     var startIndex = -1;
     for (var si = 0; si < GAME_DEFS.length; si++) {
@@ -218,11 +211,10 @@
       nextLabel = next.label;
     } else {
       nextUrl = '/?session_id=' + encodeURIComponent(state.sessionId);
-      nextLabel = 'the event report';
+      nextLabel = 'the final report';
     }
     url += '&next_url=' + encodeURIComponent(nextUrl) +
       '&next_label=' + encodeURIComponent(nextLabel);
-
     window.location.href = url;
   }
 
@@ -260,7 +252,7 @@
   // ---------------------------------------------------------------------
   // Screen: Final report
   // ---------------------------------------------------------------------
-  var GAME_ORDER_FOR_REPORT = ['timer', 'gaze', 'wobblewalk', 'deadpan'];
+  var GAME_ORDER_FOR_REPORT = ['timer', 'gaze', 'deadpan'];
 
   function renderMetricGrid(entries) {
     var dl = document.createElement('dl');
@@ -277,12 +269,41 @@
     return dl;
   }
 
+  function getVibe(score, maxScore) {
+    if (score === null || score === undefined) return 'Your lab snapshot is still loading.';
+    var pct = score / maxScore;
+    if (pct >= 0.85) return 'LASER FOCUS — you came to play.';
+    if (pct >= 0.70) return 'PRETTY SHARP — solid run.';
+    if (pct >= 0.50) return 'CHAOTIC NEUTRAL — interesting choices.';
+    return 'WILD CARD — the lab definitely got some data.';
+  }
+
   function renderReport(report) {
+    var maxScore = report.max_score || 75;
+    var completedCount = report.games_completed.length;
     el.reportMeta.textContent = 'Participant ' + (report.participant && report.participant.participant_id) +
-      ' — ' + report.games_completed.length + ' of ' + GAME_ORDER_FOR_REPORT.length + ' games completed.';
+      ' — ' + completedCount + ' of 3 tracked activities completed.';
     el.reportDisclaimer.textContent = report.disclaimer || '';
 
     el.reportBody.innerHTML = '';
+    var hero = document.createElement('div');
+    hero.className = 'report-hero';
+    var heroTitle = document.createElement('div');
+    heroTitle.className = 'report-hero-title';
+    heroTitle.textContent = 'YOUR LAB SNAPSHOT';
+    hero.appendChild(heroTitle);
+    var vibe = document.createElement('div');
+    vibe.className = 'report-vibe';
+    vibe.textContent = getVibe(report.overall_score, maxScore);
+    hero.appendChild(vibe);
+    var score = document.createElement('div');
+    score.className = 'report-score-big';
+    score.textContent = report.overall_score === null || report.overall_score === undefined
+      ? '—'
+      : Number(report.overall_score).toFixed(1) + ' / ' + maxScore;
+    hero.appendChild(score);
+    el.reportBody.appendChild(hero);
+
     GAME_ORDER_FOR_REPORT.forEach(function (key) {
       var summary = report.summary && report.summary[key];
       var card = document.createElement('div');
@@ -291,6 +312,13 @@
       var heading = document.createElement('h3');
       heading.textContent = (summary && summary.label) || key;
       card.appendChild(heading);
+
+      if (summary && summary.score !== undefined && summary.score !== null) {
+        var scoreLine = document.createElement('div');
+        scoreLine.className = 'game-score';
+        scoreLine.textContent = Number(summary.score).toFixed(1) + ' / 25';
+        card.appendChild(scoreLine);
+      }
 
       if (!summary) {
         var missing = document.createElement('p');
@@ -304,7 +332,7 @@
         card.appendChild(unavailable);
       } else {
         var entries = Object.keys(summary)
-          .filter(function (k) { return k !== 'label' && k !== 'note'; })
+          .filter(function (k) { return k !== 'label' && k !== 'note' && k !== 'score'; })
           .map(function (k) { return [k, summary[k]]; });
         card.appendChild(renderMetricGrid(entries));
         if (summary.note) {
@@ -324,6 +352,9 @@
   async function showReport() {
     if (!state.sessionId) return;
     try {
+      // Ensure the session is marked complete so the leaderboard and backup
+      // reflect it.  Harmless if already complete (just re-sets the timestamp).
+      await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/complete', { method: 'POST' }).catch(function () {});
       var res = await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/report');
       var data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Could not load the report.');

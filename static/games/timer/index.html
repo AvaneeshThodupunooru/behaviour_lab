@@ -5,13 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>The Pressure Clock</title>
 <link rel="stylesheet" href="styles.css" />
-<script>
-  // WebGazer recognises `localhost` as a development-safe origin but not
-  // the equivalent 127.0.0.1 address. Keep local launches on localhost.
-  if (location.hostname === '127.0.0.1') {
-    location.replace(location.href.replace('//127.0.0.1', '//localhost'));
-  }
-</script>
+<script src="https://api.gazerecorder.com/GazeCloudAPI.js"></script>
 </head>
 <body>
 
@@ -122,10 +116,6 @@
     </section>
 
   </main>
-
-  <!-- WebGazer.js — webcam-based gaze estimation, no install required.
-       Loaded from a CDN; gaze-pipeline.js fails soft if this is blocked. -->
-  <script src="https://cdn.jsdelivr.net/npm/webgazer@2.1.0/dist/webgazer.min.js"></script>
 
   <!-- Pure, independently unit-testable modules -->
   <script src="js/roi.js"></script>

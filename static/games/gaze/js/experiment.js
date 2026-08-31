@@ -1,10 +1,31 @@
 const Experiment = (function () {
-  const POSTER_DURATION_MS = 7000;
+  // Four posters × five seconds = the merged station's 20-second phase.
+  const POSTER_DURATION_MS = 5000;
   let images = [];
   let currentIndex = 0;
   let currentImgEl = null;
   let currentImgDocRect = null; // {left, top, width, height} in document coordinates
   let onCompleteCb = null;
+  let questionResults = [];
+
+  const QUESTIONS = {
+    1: [
+      { prompt: 'What animal is the woman holding?', options: ['Cat', 'Rabbit', 'Dog', 'Fox'], answer: 'Cat' },
+      { prompt: 'What is the man holding?', options: ['A camera', 'A fish bowl', 'A book', 'A coffee cup'], answer: 'A fish bowl' }
+    ],
+    2: [
+      { prompt: 'What is the man in the center doing?', options: ['Raising both arms', 'Playing guitar', 'Reading', 'Running'], answer: 'Raising both arms' },
+      { prompt: 'What is the woman in white holding?', options: ['A phone', 'A wine glass', 'A handbag', 'A flower'], answer: 'A wine glass' }
+    ],
+    3: [
+      { prompt: 'What is the woman doing?', options: ['Playing tennis', 'Drawing', 'Shooting a bow', 'Riding a horse'], answer: 'Shooting a bow' },
+      { prompt: 'What color is the woman’s top?', options: ['Blue', 'Red', 'Yellow', 'Green'], answer: 'Blue' }
+    ],
+    4: [
+      { prompt: 'What color is the man’s shirt?', options: ['Blue', 'Black', 'White', 'Green'], answer: 'Blue' },
+      { prompt: 'What color is the center woman’s top?', options: ['Pink', 'Purple', 'Yellow', 'White'], answer: 'Pink' }
+    ]
+  };
 
   function mapGazeToImagePixels(docX, docY) {
     if (!currentImgDocRect) return null;
@@ -37,9 +58,8 @@ const Experiment = (function () {
     container.appendChild(currentImgEl);
 
     document.getElementById('posterCounter').textContent =
-      `Image ${index + 1} / ${images.length}`;
+      `Image ${index + 1} / ${images.length} — look carefully; questions follow`;
 
-    // Wait for layout, then record where the image actually landed on screen
     currentImgEl.onload = () => {
       const rect = currentImgEl.getBoundingClientRect();
       currentImgDocRect = {
@@ -50,13 +70,87 @@ const Experiment = (function () {
       };
     };
 
-    setTimeout(() => {
-      if (currentIndex + 1 < images.length) {
-        showPoster(currentIndex + 1);
-      } else {
-        finish();
-      }
-    }, POSTER_DURATION_MS);
+    setTimeout(() => showQuestions(index), POSTER_DURATION_MS);
+  }
+
+  function showQuestions(index) {
+    // Stop attributing gaze samples to the poster while the participant answers.
+    currentImgDocRect = null;
+    const questions = QUESTIONS[images[index].id] || [];
+    const container = document.getElementById('posterContainer');
+    container.innerHTML = '';
+
+    const card = document.createElement('div');
+    card.className = 'gaze-question-card';
+
+    const title = document.createElement('h2');
+    title.textContent = `Quick recall — Image ${index + 1}`;
+    card.appendChild(title);
+
+    const hint = document.createElement('p');
+    hint.className = 'gaze-question-hint';
+    hint.textContent = 'Answer both questions, then continue.';
+    card.appendChild(hint);
+
+    const answers = [];
+    questions.forEach((question, qIndex) => {
+      const fieldset = document.createElement('fieldset');
+      fieldset.className = 'gaze-question';
+      const legend = document.createElement('legend');
+      legend.textContent = `${qIndex + 1}. ${question.prompt}`;
+      fieldset.appendChild(legend);
+
+      question.options.forEach(option => {
+        const label = document.createElement('label');
+        label.className = 'gaze-option';
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = `gaze-q-${index}-${qIndex}`;
+        input.value = option;
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(option));
+        fieldset.appendChild(label);
+      });
+      card.appendChild(fieldset);
+      answers.push(fieldset);
+    });
+
+    const continueButton = document.createElement('button');
+    continueButton.type = 'button';
+    continueButton.className = 'gaze-question-continue';
+    continueButton.textContent = index + 1 < images.length ? 'Next image' : 'Finish gaze task';
+    continueButton.disabled = true;
+    card.appendChild(continueButton);
+
+    function selectedValues() {
+      return questions.map((_, qIndex) => {
+        const selected = card.querySelector(`input[name="gaze-q-${index}-${qIndex}"]:checked`);
+        return selected ? selected.value : null;
+      });
+    }
+
+    card.addEventListener('change', () => {
+      continueButton.disabled = selectedValues().some(value => value === null);
+    });
+
+    continueButton.addEventListener('click', () => {
+      const values = selectedValues();
+      values.forEach((value, qIndex) => {
+        const question = questions[qIndex];
+        questionResults.push({
+          imageId: images[index].id,
+          questionIndex: qIndex + 1,
+          selected: value,
+          correct: value === question.answer
+        });
+      });
+      if (index + 1 < images.length) showPoster(index + 1);
+      else finish();
+    });
+
+    container.appendChild(card);
+    document.getElementById('posterCounter').textContent =
+      `Image ${index + 1} / ${images.length} — recall check`;
   }
 
   function finish() {
@@ -67,6 +161,7 @@ const Experiment = (function () {
   function start(imageList, onComplete) {
     images = imageList;
     onCompleteCb = onComplete;
+    questionResults = [];
 
     GazeTracker.onResult((gazeData) => {
       if (gazeData.state !== 0) return; // skip blinks / tracking loss / uncalibrated
@@ -80,5 +175,7 @@ const Experiment = (function () {
     showPoster(0);
   }
 
-  return { start };
+  function getQuestionResults() { return questionResults.slice(); }
+
+  return { start, getQuestionResults };
 })();

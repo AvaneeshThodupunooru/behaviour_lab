@@ -171,6 +171,16 @@ input[type="text"] {
 
 .report-body { margin-top: 10px; }
 
+.overall-score {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #e8f7f0;
+  color: var(--good);
+  font-size: 17px;
+  font-weight: 800;
+}
+
 .report-card {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -178,6 +188,7 @@ input[type="text"] {
   margin-bottom: 12px;
 }
 .report-card h3 { margin: 0 0 10px; font-size: 15px; }
+.game-score { margin: -2px 0 12px; color: var(--good); font-size: 14px; font-weight: 800; }
 .report-card .missing { color: var(--muted); font-size: 13px; }
 
 .metric-grid {
@@ -196,3 +207,15 @@ input[type="text"] {
   padding-left: 10px;
   margin: 12px 0 18px;
 }
+
+
+.report-hero {
+  margin: 0 0 16px;
+  padding: 22px;
+  border-radius: 10px;
+  background: #182126;
+  color: #fff;
+}
+.report-hero-title { font-size: 12px; letter-spacing: .12em; opacity: .7; font-weight: 800; }
+.report-vibe { margin-top: 7px; font-size: 20px; font-weight: 900; }
+.report-score-big { margin-top: 12px; font-size: 36px; font-weight: 900; }

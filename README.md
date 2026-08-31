@@ -1,6 +1,6 @@
 # Behavior Lab — 4-Game Event Integration
 
-One FastAPI process serves the event shell, four games, the WobbleWalk video
+One FastAPI process serves the event shell, three tracked activities, the WobbleWalk video
 analysis API, and (optionally) stores every participant session in MongoDB
 Atlas. Without Atlas it runs on an in-memory store so nothing ever hard-fails.
 
@@ -32,37 +32,29 @@ py -3.9 -m venv .venv
 
 ## 3. Configure MongoDB (optional but recommended for the event)
 
-Copy the example file and edit it:
+The backend reads `MONGODB_URI` from the process environment — see
+`.env.example` for placeholders. Never commit real credentials.
 
+PowerShell:
+```powershell
+$env:MONGODB_URI = "mongodb+srv://<user>:<password>@<cluster-host>.mongodb.net/?retryWrites=true&w=majority"
+```
+
+CMD:
 ```bat
-copy .env.example .env
-notepad .env
+set MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-host>.mongodb.net/?retryWrites=true&w=majority
 ```
 
-Set the one required value (single line, no quotes):
-
-```
-MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-host>/
-```
-
-The backend loads this `.env` automatically at startup. Never commit it — it is
-git-ignored.
-
-- If `.env` is missing, empty, or Atlas is unreachable, the server still starts
-  and uses the in-memory store (results lost on restart).
+- Omit the variable to run in MemoryStore mode (results lost on restart).
 - Database name is fixed to `the-thing`; collections and indexes are created
   automatically on first connect.
-- Optional alternative: a shell environment variable still works and takes
-  precedence over `.env`
-  (`$env:MONGODB_URI = "..."` in PowerShell, `set MONGODB_URI=...` in CMD).
 - Atlas checklist: create project → M0 cluster (≥ MongoDB 5.0) → database user
   with read/write → **Network Access: add this laptop's public IP** (or
   `0.0.0.0/0` for the event day).
 
 Verify after starting: `http://localhost:8000/api/health` should show
-`"store":"mongodb","mongo":true`. If it shows `"memory"`, the `note` field says
-whether the URI was missing or the connection failed (full detail is printed in
-the server console, never over HTTP).
+`"store":"mongodb","mongo":true`. If it shows `"memory"`, the `note` field
+explains why.
 
 ## 4. Run
 
@@ -119,8 +111,8 @@ backend/                  common FastAPI app + Mongo/Memory store + report build
 backend/wobblewalk_backend/   original WobbleWalk analysis service, mounted at /wobblewalk-api
 static/shared/event-client.js shared browser helper (submit/retry/localStorage fallback)
 static/shell/             event UI served at /
-static/games/timer|gaze|deadpan|wobblewalk   the four games (wobblewalk = built dist)
-source/                   pristine copies of all four original projects
+static/games/timer|gaze|deadpan|wobblewalk   the three tracked activities (wobblewalk = built dist)
+source/                   pristine copies of all tracked activities original projects
 build/wobblewalk-frontend/    integrated Vite workspace used to produce static/games/wobblewalk
 tools/smoke_test_api.ps1  12-check backend smoke test
 ```

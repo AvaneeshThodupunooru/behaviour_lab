@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Behavior Lab — Gaze and Pressure Clock</title>
+  <link rel="stylesheet" href="../gaze/style.css" />
+  <link rel="stylesheet" href="../timer/styles.css" />
+  <script src="https://api.gazerecorder.com/GazeCloudAPI.js"></script>
+  <style>
+    #merged-calibration-screen { position: fixed; inset: 0; z-index: 2001; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg); }
+    #merged-calibration-screen[hidden] { display: none; }
+    #merged-calibration-screen .panel { text-align: center; }
+  </style>
+</head>
+<body>
+  <!-- One GazeCloud-owned calibration, shared by both phases. -->
+  <section id="merged-calibration-screen">
+    <div class="panel">
+      <p class="eyebrow">Behavior Lab</p>
+      <h1>Eye tracking setup</h1>
+      <p id="merged-calibration-status" class="body-text body-text--muted">Allow camera access, then complete the calibration shown by the eye tracker.</p>
+      <button id="merged-start" class="btn btn--primary" type="button">Start calibration</button>
+    </div>
+  </section>
+
+  <!-- Phase 1: the original gaze experiment's required DOM. -->
+  <section id="experimentScreen" style="display:none;">
+    <div id="posterContainer"></div>
+    <p id="posterCounter"></p>
+  </section>
+
+  <!-- Phase 2: the original Pressure Clock DOM. -->
+  <!-- Phase 2 stays hidden until the gaze experiment completes. -->
+  <div id="app" hidden>
+    <div id="gaze-status" class="gaze-status" hidden></div>
+    <div id="gaze-debug" class="gaze-debug" hidden aria-hidden="true">
+      <span id="gaze-debug-dot" class="gaze-debug-dot"></span>
+      <span id="gaze-debug-label" class="gaze-debug-label">GAZE --</span>
+    </div>
+    <div id="timer-hud" class="timer-hud" hidden>
+      <div class="timer-value-wrap"><span id="timer-value-sec">40</span><span id="timer-value-ms">.00</span></div>
+    </div>
+    <main>
+      <section id="screen-start" class="screen screen--active">
+        <div class="panel panel--start"><p class="eyebrow">THE PRESSURE CLOCK</p><h1>A quick word search.</h1><p class="body-text">Complete the following tasks as accurately and quickly as you can.</p><button id="btn-start" class="btn btn--primary">Begin</button></div>
+      </section>
+      <section id="screen-calibration" class="screen">
+        <div class="calibration-panel"><p class="eyebrow">EYE-TRACKER SETUP</p><h2>Eye tracking ready.</h2><p id="calibration-instruction" class="body-text"></p><button id="calibration-target" class="calibration-target" type="button" hidden></button><p id="calibration-progress" class="body-text body-text--muted"></p><div class="calibration-actions"><button id="btn-calibration-retry" class="btn btn--ghost" type="button" hidden>Try again</button><button id="btn-calibration-continue" class="btn btn--primary" type="button" hidden>Start game</button></div></div>
+      </section>
+      <section id="screen-transition" class="screen"><div class="panel panel--transition"><p id="transition-eyebrow" class="eyebrow">ROUND 1</p><h2 id="transition-title">Get ready</h2><p id="transition-body" class="body-text"></p><div id="transition-countdown" class="transition-countdown">3</div></div></section>
+      <section id="screen-game" class="screen"><div id="instruction" class="instruction"></div><div class="wordsearch-layout"><div id="wordsearch-grid" class="wordsearch-grid"></div><ul id="word-list" class="word-list"></ul></div></section>
+      <section id="screen-reveal" class="screen"><div id="reveal-container" class="reveal-container"></div></section>
+      <section id="screen-results" class="screen"><div class="panel panel--results"><p class="eyebrow">YOUR PRESSURE PROFILE</p><div class="results-grid"><table id="metrics-table" class="metrics-table"></table><div class="pressure-index-box"><div class="pressure-index-label">PRESSURE INDEX</div><div id="pressure-index-value" class="pressure-index-value">--/100</div><div class="pressure-index-disclaimer">Experimental behavioral score, not a clinical measure.</div><p id="interpretation-line" class="interpretation-line"></p></div></div><div class="heatmap-section"><p class="heatmap-label">Your gaze map</p><canvas id="heatmap-canvas" class="heatmap-canvas"></canvas></div><p id="submit-status" class="body-text body-text--muted submit-status"></p><div class="results-actions"><button id="btn-export" class="btn btn--secondary">Export session JSON</button><button id="btn-retry-submit" class="btn btn--secondary" hidden>Retry sending</button><a id="btn-return-event" class="btn btn--secondary" href="/" hidden>Return to event</a><a id="btn-next-game" class="btn btn--primary" href="/" hidden>Continue</a><button id="btn-restart" class="btn btn--ghost">Run again</button></div></div></section>
+    </main>
+  </div>
+
+  <script src="/static/shared/event-client.js"></script>
+  <script src="../gaze/js/imageLoader.js"></script>
+  <script src="../gaze/js/gazeTracker.js"></script>
+  <script src="../gaze/js/dataStore.js"></script>
+  <script src="../gaze/js/heatmap.js"></script>
+  <script src="../gaze/js/experiment.js"></script>
+  <script>
+    window.PressureClockHostOptions = { skipCalibration: true, autoStart: true, durationSec: 30 };
+  </script>
+  <script src="../timer/js/roi.js"></script>
+  <script src="../timer/js/metrics.js"></script>
+  <script src="../timer/js/trial-logger.js"></script>
+  <script src="../timer/js/gaze-pipeline.js"></script>
+  <script src="../timer/js/wordsearch.js"></script>
+  <script src="../timer/js/heatmap.js"></script>
+  <script src="../timer/js/reveal.js"></script>
+  <script src="../timer/js/main.js"></script>
+  <script src="js/merged-main.js"></script>
+</body>
+</html>

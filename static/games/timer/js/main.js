@@ -18,6 +18,9 @@
   var WordSearchLib = window.PressureClockWordSearch;
   var Heatmap = window.PressureClockHeatmap;
   var Reveal = window.PressureClockReveal;
+  // Optional host hooks are used only by the merged gaze-timer station.
+  // Standalone Pressure Clock behavior remains unchanged.
+  var hostOptions = window.PressureClockHostOptions || {};
 
   var ROUND_CONFIGS = [
     {
@@ -53,7 +56,7 @@
   // The single word-search round replaces the legacy shape-game rounds.
   ROUND_CONFIGS = [{
     round: 1,
-    durationSec: 45,
+    durationSec: Number(hostOptions.durationSec) || 45,
     transitionTitle: 'Find the words',
     transitionBody: 'Drag across letters to select a word — horizontally, vertically, or diagonally, in either direction. Find all 6 before time runs out.'
   }];
@@ -280,23 +283,21 @@
       return;
     }
 
-    el.calibrationInstruction.textContent = 'Warming up eye tracking…';
+    // GazeCloudAPI owns calibration. Do not run Pressure Clock's old
+    // nine-point calibration on top of it.
+    el.calibrationTarget.hidden = true;
+    el.calibrationInstruction.textContent = 'Eye tracking is calibrated and ready.';
     el.calibrationProgress.textContent = '';
-    el.btnCalibrationContinue.hidden = true;
-    if (window.webgazer && typeof window.webgazer.clearData === 'function') window.webgazer.clearData();
-    window.setTimeout(function () {
-      el.calibrationInstruction.textContent = 'Look directly at the red dot, then click it three times.';
-      el.calibrationProgress.textContent = 'Point 1 of ' + CALIBRATION_POINTS.length;
-      placeCalibrationTarget();
-    }, 800);
+    el.btnCalibrationContinue.hidden = false;
+    el.btnCalibrationContinue.textContent = 'Start game';
   }
 
   function measureCalibrationPoint(dotX, dotY) {
     return new Promise(function (resolve) {
       var samples = [];
       var iv = setInterval(function () {
-        Promise.resolve(window.webgazer && window.webgazer.getCurrentPrediction ? window.webgazer.getCurrentPrediction() : null)
-          .then(function (pred) { if (pred) samples.push({ x: pred.x, y: pred.y }); });
+        var sample = gazePipeline && gazePipeline.getLatestSample();
+        if (sample) samples.push({ x: sample.x * window.innerWidth, y: sample.y * window.innerHeight });
       }, 50);
       setTimeout(function () {
         clearInterval(iv);
@@ -367,10 +368,16 @@
       settled = true;
       if (gazeStartTimeout !== null) clearTimeout(gazeStartTimeout);
       gazeStartTimeout = null;
-      beginCalibration(available);
+      if (hostOptions.autoStart) {
+        runRoundSequence(0);
+      } else {
+        beginCalibration(available);
+      }
     }
-    gazeStartTimeout = window.setTimeout(function () { completeTrackerStart(false); }, 8000);
-    gazePipeline.start().then(completeTrackerStart);
+    // GazeCloud's built-in calibration is participant-driven. Keep the game
+    // waiting for it instead of treating tracker startup as immediately done.
+    gazeStartTimeout = window.setTimeout(function () { completeTrackerStart(false); }, 120000);
+    gazePipeline.start({ skipCalibration: hostOptions.skipCalibration === true }).then(completeTrackerStart);
   }
 
   function runRoundSequence(index) {
@@ -606,7 +613,12 @@
     // Build and submit the session result BEFORE any visualization work so a
     // rendering problem can never block submission or leaving the game.
     window.__pressureClockSession = buildSessionResult(agg);
-    submitResultToEvent(window.__pressureClockSession);
+    var submission = submitResultToEvent(window.__pressureClockSession);
+    if (typeof hostOptions.onTimerComplete === 'function') {
+      Promise.resolve(submission).then(function (outcome) {
+        hostOptions.onTimerComplete(window.__pressureClockSession, outcome);
+      });
+    }
 
     try {
       renderHeatmapCanvas(agg.allSamples);
@@ -624,7 +636,7 @@
     canvas.height = cssHeight * window.devicePixelRatio;
     var ctx = canvas.getContext('2d');
     ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
-    Heatmap.renderHeatmap(ctx, cssWidth, cssHeight, null, allSamples);
+    Heatmap.renderHeatmap(ctx, cssWidth, cssHeight, allSamples);
   }
 
   // -----------------------------------------------------------------------

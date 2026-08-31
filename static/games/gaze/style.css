@@ -61,3 +61,29 @@ html, body {
   margin: 0;
   font-size: 0.9em;
 }
+
+.gaze-question-card {
+  width: min(760px, 92vw);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid #dfe3dc;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.12);
+}
+.gaze-question-card h2 { margin: 0 0 6px; }
+.gaze-question-hint { margin: 0 0 20px; color: #667079; }
+.gaze-question { border: 0; padding: 0; margin: 0 0 20px; }
+.gaze-question legend { font-weight: 700; margin-bottom: 10px; }
+.gaze-option { display: flex; align-items: center; gap: 9px; margin: 7px 0; font-weight: 400; cursor: pointer; }
+.gaze-question-continue {
+  padding: 11px 22px;
+  border: 0;
+  border-radius: 7px;
+  background: #182126;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gaze-question-continue:disabled { opacity: .45; cursor: not-allowed; }
