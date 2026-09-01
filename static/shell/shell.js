@@ -298,7 +298,7 @@
       if (!samples || samples.length === 0) return;
 
       // Draw gaze scanpath (connecting line)
-      ctx.strokeStyle = 'rgba(255, 77, 94, 0.65)';
+      ctx.strokeStyle = 'rgba(255, 77, 141, 0.7)';
       ctx.lineWidth = Math.max(2, canvas.width * 0.004);
       ctx.beginPath();
       samples.forEach(function (pt, idx) {
@@ -309,13 +309,13 @@
 
       // Draw fixation points
       samples.forEach(function (pt) {
-        ctx.fillStyle = 'rgba(255, 200, 87, 0.75)';
+        ctx.fillStyle = 'rgba(255, 210, 63, 0.8)';
         ctx.beginPath();
         var radius = Math.max(3, canvas.width * 0.007);
         ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = 'rgba(255, 77, 94, 0.9)';
+        ctx.strokeStyle = 'rgba(18, 11, 38, 0.85)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
       });
@@ -323,9 +323,9 @@
     img.onerror = function () {
       canvas.width = 400;
       canvas.height = 250;
-      ctx.fillStyle = '#f1f1ee';
+      ctx.fillStyle = '#251850';
       ctx.fillRect(0, 0, 400, 250);
-      ctx.fillStyle = '#667079';
+      ctx.fillStyle = '#fff4e4';
       ctx.font = '13px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Poster image', 200, 125);
@@ -337,11 +337,11 @@
     var ctx = canvas.getContext('2d');
     canvas.width = 300;
     canvas.height = 300;
-    ctx.fillStyle = '#15151c';
+    ctx.fillStyle = '#120b26';
     ctx.fillRect(0, 0, 300, 300);
 
     // Center straight reference line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.strokeStyle = 'rgba(255, 244, 228, 0.25)';
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -353,7 +353,7 @@
     if (!route || route.length === 0) return;
 
     // Draw actual walked route
-    ctx.strokeStyle = '#49d6c4';
+    ctx.strokeStyle = '#3fe0a0';
     ctx.lineWidth = 3;
     ctx.beginPath();
     route.forEach(function (pt, idx) {
@@ -379,7 +379,7 @@
     hero.className = 'report-hero';
     var heroTitle = document.createElement('div');
     heroTitle.className = 'report-hero-title';
-    heroTitle.textContent = 'YOUR BEHAVIOR LAB REPORT';
+    heroTitle.textContent = 'YOUR THE THING REPORT';
     hero.appendChild(heroTitle);
     var vibe = document.createElement('div');
     vibe.className = 'report-vibe';

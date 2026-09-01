@@ -46,7 +46,7 @@
 
     ctx.clearRect(0, 0, width, height);
 
-    ctx.fillStyle = '#12161c';
+    ctx.fillStyle = '#120b26';
     ctx.fillRect(0, 0, width, height);
 
     if (!gazeSamples.length) return;

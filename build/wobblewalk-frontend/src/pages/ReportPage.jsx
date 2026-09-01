@@ -16,13 +16,16 @@ import { getEventParams, eventShellUrl } from '../api/eventSession.js';
 // Neutral, non-clinical labels only. This is a game-performance score
 // describing how closely the tracked path followed a straight line -
 // not a medical, balance, or sobriety assessment of any kind.
+// Tier colors are deepened variants of the THE THING accents (mint, sky, zap,
+// tang, punch, lilac) so they stay legible as text and strokes on the cream
+// report surfaces.
 const RESULT_TIERS = [
-  { max: 12, title: 'Highly Consistent Path', label: 'Minimal deviation', color: '#168c65', note: 'The tracked path closely followed a straight line, with very little side-to-side movement.' },
-  { max: 27, title: 'Mostly Consistent Path', label: 'Slight deviation', color: '#2f7fd3', note: 'The tracked path stayed close to a straight line, with small, typical deviations.' },
-  { max: 45, title: 'Moderate Drift', label: 'Noticeable deviation', color: '#d38b16', note: 'The tracked path showed a steady, moderate drift away from a straight line.' },
-  { max: 64, title: 'Wide Deviation', label: 'Frequent course changes', color: '#e2673f', note: 'The tracked path moved well off a straight line, with several course corrections.' },
-  { max: 82, title: 'High Variability', label: 'Substantial deviation', color: '#db3e67', note: 'The tracked path deviated substantially from a straight line for much of the walk.' },
-  { max: 100, title: 'Very High Variability', label: 'Maximum deviation', color: '#8e4bc5', note: 'The tracked path showed large, frequent swings away from a straight line.' },
+  { max: 12, title: 'Highly Consistent Path', label: 'Minimal deviation', color: '#0f8f63', note: 'The tracked path closely followed a straight line, with very little side-to-side movement.' },
+  { max: 27, title: 'Mostly Consistent Path', label: 'Slight deviation', color: '#1a7fb5', note: 'The tracked path stayed close to a straight line, with small, typical deviations.' },
+  { max: 45, title: 'Moderate Drift', label: 'Noticeable deviation', color: '#b5820b', note: 'The tracked path showed a steady, moderate drift away from a straight line.' },
+  { max: 64, title: 'Wide Deviation', label: 'Frequent course changes', color: '#d1571a', note: 'The tracked path moved well off a straight line, with several course corrections.' },
+  { max: 82, title: 'High Variability', label: 'Substantial deviation', color: '#d61e63', note: 'The tracked path deviated substantially from a straight line for much of the walk.' },
+  { max: 100, title: 'Very High Variability', label: 'Maximum deviation', color: '#7a4cd6', note: 'The tracked path showed large, frequent swings away from a straight line.' },
 ];
 
 const SAMPLE_REPORT = {
@@ -52,40 +55,42 @@ const SAMPLE_REPORT = {
 };
 
 const REPORT_CSS = `
-.ww-page{--ink:#182126;--muted:#617078;--paper:#f6f7f2;--line:#dfe3dc;--lime:#e4f88a;--cyan:#8ddcf1;--coral:#ff8268;--yellow:#ffd868;width:100%;max-width:100%;overflow-x:clip;color:var(--ink);font-family:Inter,system-ui,sans-serif;letter-spacing:0}
-.ww-page *{box-sizing:border-box;letter-spacing:0}
+.ww-page{--ink:#120b26;--muted:#5b4a7d;--paper:#fbead1;--cream:#fff4e4;--line:#120b26;--lime:#3fe0a0;--cyan:#4cc9f0;--coral:#ff4d8d;--yellow:#ffd23f;--lilac:#b79cff;--hard:6px 6px 0 0 #120b26;--hard-sm:4px 4px 0 0 #120b26;--font-body:'Space Grotesk',system-ui,sans-serif;--font-title:'Baloo 2','Trebuchet MS',system-ui,sans-serif;width:100%;max-width:100%;overflow-x:clip;color:var(--ink);font-family:var(--font-body);letter-spacing:0}
+.ww-page *{box-sizing:border-box}
 .ww-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-.ww-action{display:inline-flex;align-items:center;gap:8px;min-height:40px;border:1px solid var(--line);border-radius:6px;padding:8px 12px;background:#fff;color:var(--ink);font-weight:700;font-size:13px;transition:transform .18s ease,box-shadow .18s ease}
-.ww-action:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(24,33,38,.09)}
-.ww-action.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
-.ww-hero{position:relative;min-width:0;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;background:#fff;border:1px solid var(--line);border-bottom:7px solid var(--tier);border-radius:8px;padding:28px 30px}
-.ww-hero:after{content:'';position:absolute;width:170px;height:170px;right:116px;bottom:-130px;border:30px solid var(--lime);border-radius:50%;opacity:.65;pointer-events:none}
-.ww-kicker{display:flex;align-items:center;gap:8px;margin:0 0 10px;color:var(--tier);font-size:12px;font-weight:800;text-transform:uppercase}
-.ww-title{margin:0;font-family:Fraunces,Georgia,serif;font-size:clamp(34px,6vw,62px);font-weight:650;line-height:.98;max-width:650px}
+.ww-action{display:inline-flex;align-items:center;gap:8px;min-height:42px;border:3px solid var(--line);border-radius:999px;padding:8px 16px;background:var(--cream);color:var(--ink);font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.12em;box-shadow:var(--hard-sm);transition:transform .2s cubic-bezier(0.22,1,0.36,1),box-shadow .2s cubic-bezier(0.22,1,0.36,1),background .2s}
+.ww-action:hover{transform:translateY(-2px) rotate(-1.5deg);box-shadow:var(--hard);background:var(--yellow)}
+.ww-action:active{transform:translateY(1px);box-shadow:none}
+.ww-action.primary{background:var(--coral);color:var(--cream);border-color:var(--line)}
+.ww-action.primary:hover{background:#ff77a5;color:var(--cream)}
+.ww-hero{position:relative;min-width:0;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;background:var(--cream);border:3px solid var(--line);border-bottom:10px solid var(--tier);border-radius:2rem;box-shadow:var(--hard);padding:30px 32px}
+.ww-hero:after{content:'';position:absolute;width:170px;height:170px;right:116px;bottom:-130px;border:30px solid var(--lime);border-radius:50%;opacity:.5;pointer-events:none}
+.ww-kicker{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px;padding:6px 14px;border:3px solid var(--line);border-radius:999px;background:var(--yellow);box-shadow:var(--hard-sm);color:var(--ink);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.ww-title{margin:0;font-family:var(--font-title);font-size:clamp(34px,6vw,62px);font-weight:800;line-height:.98;max-width:650px;text-shadow:0 4px 0 rgba(18,11,38,.12)}
 .ww-note{margin:14px 0 0;max-width:58ch;color:var(--muted);font-size:15px;line-height:1.55}
 .ww-score{position:relative;width:150px;height:150px;display:grid;place-items:center;z-index:1}
 .ww-score svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
-.ww-score .track{stroke:#edf0eb}.ww-score .fill{stroke:var(--tier);transition:stroke-dashoffset .8s ease}
-.ww-score-value{font-size:46px;font-weight:850;line-height:1}.ww-score-label{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);margin-top:3px;text-align:center}
+.ww-score .track{stroke:rgba(18,11,38,.14)}.ww-score .fill{stroke:var(--tier);transition:stroke-dashoffset .8s cubic-bezier(0.22,1,0.36,1)}
+.ww-score-value{font-family:var(--font-title);font-size:48px;font-weight:800;line-height:1}.ww-score-label{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px;text-align:center}
 .ww-chips{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0 0}
-.ww-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.78);font-size:12px;font-weight:750;color:var(--ink)}
+.ww-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border:3px solid var(--line);border-radius:999px;background:var(--cream);box-shadow:var(--hard-sm);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
 .ww-main{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(240px,.62fr);gap:16px;min-width:0;align-items:stretch}
-.ww-panel{min-width:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:20px}
+.ww-panel{min-width:0;background:var(--cream);border:3px solid var(--line);border-radius:1.5rem;box-shadow:var(--hard);padding:22px}
 .ww-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
-.ww-panel-title{display:flex;align-items:center;gap:8px;margin:0;font-size:15px;font-weight:850}.ww-panel-sub{margin:4px 0 0;color:var(--muted);font-size:12px}
-.ww-legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px;font-weight:700}.ww-legend span{display:flex;align-items:center;gap:5px}.ww-legend i{display:block;width:16px;height:3px;background:var(--coral)}.ww-legend i.ideal{background:repeating-linear-gradient(90deg,var(--ink) 0 4px,transparent 4px 7px)}
-.ww-route{width:100%;min-width:0;height:390px;border:1px solid var(--line);border-radius:6px;background-color:var(--paper);background-image:linear-gradient(rgba(24,33,38,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(24,33,38,.045) 1px,transparent 1px);background-size:24px 24px;overflow:hidden}
-.ww-route svg{width:100%;height:100%;display:block}.ww-route-path{fill:none;stroke:var(--coral);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}.ww-route-shadow{fill:none;stroke:#fff;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.ww-route-ideal{stroke:var(--ink);stroke-width:1.3;stroke-dasharray:4 5;opacity:.55}
-.ww-side{min-width:0}.ww-verdict{background:var(--lime);border-color:#c4db62}.ww-roast-band{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;padding:22px 26px}.ww-verdict blockquote{max-width:38ch;margin:0;font-family:Fraunces,Georgia,serif;font-size:23px;font-weight:620;line-height:1.18;overflow-wrap:break-word;text-wrap:balance}.ww-verdict p{margin:0;font-size:13px;line-height:1.5;color:#425028}.ww-roast-meta{max-width:180px;text-align:right}
-.ww-callouts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}.ww-callouts li{display:flex;gap:10px;padding:12px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.45}.ww-callouts li:first-child{border-top:0;padding-top:2px}.ww-callouts svg{flex:none;margin-top:1px;color:var(--tier)}
-.ww-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.ww-stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:17px}.ww-stat-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:6px;margin-bottom:18px;color:var(--ink)}.ww-stat:nth-child(1) .ww-stat-icon{background:var(--cyan)}.ww-stat:nth-child(2) .ww-stat-icon{background:var(--yellow)}.ww-stat:nth-child(3) .ww-stat-icon{background:var(--coral)}.ww-stat:nth-child(4) .ww-stat-icon{background:var(--lime)}
-.ww-stat-value{font-size:27px;font-weight:850;line-height:1}.ww-stat-label{margin-top:6px;color:var(--muted);font-size:11px;font-weight:750;text-transform:uppercase}
-.ww-footer{display:flex;justify-content:space-between;gap:20px;margin-top:14px;padding:12px 2px;color:var(--muted);font-size:11px;line-height:1.4}
-.ww-empty{max-width:560px;margin:70px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:34px;text-align:center}.ww-empty-icon{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 18px;background:var(--yellow);border-radius:8px}.ww-empty h1{font-family:Fraunces,Georgia,serif;font-size:32px;margin:0}.ww-empty p{color:var(--muted);line-height:1.55;margin:10px 0 22px}
-@media(max-width:980px){.ww-hero{grid-template-columns:1fr;padding:24px}.ww-score{width:130px;height:130px}.ww-main{grid-template-columns:1fr}.ww-route{height:360px}.ww-roast-band{grid-template-columns:1fr}.ww-roast-meta{max-width:none;text-align:left}}
+.ww-panel-title{display:flex;align-items:center;gap:8px;margin:0;font-family:var(--font-title);font-size:19px;font-weight:800}.ww-panel-sub{margin:4px 0 0;color:var(--muted);font-size:12px}
+.ww-legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.ww-legend span{display:flex;align-items:center;gap:5px}.ww-legend i{display:block;width:16px;height:4px;background:var(--coral)}.ww-legend i.ideal{background:repeating-linear-gradient(90deg,var(--ink) 0 4px,transparent 4px 7px)}
+.ww-route{width:100%;min-width:0;height:390px;border:3px solid var(--line);border-radius:14px;background-color:var(--paper);background-image:linear-gradient(rgba(18,11,38,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(18,11,38,.07) 1px,transparent 1px);background-size:24px 24px;overflow:hidden}
+.ww-route svg{width:100%;height:100%;display:block}.ww-route-path{fill:none;stroke:var(--coral);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.ww-route-shadow{fill:none;stroke:var(--cream);stroke-width:9;stroke-linecap:round;stroke-linejoin:round}.ww-route-ideal{stroke:var(--ink);stroke-width:1.6;stroke-dasharray:4 5;opacity:.5}
+.ww-side{min-width:0}.ww-verdict{background:var(--lime);border-color:var(--line)}.ww-roast-band{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;padding:24px 28px}.ww-verdict blockquote{max-width:38ch;margin:0;font-family:var(--font-title);font-size:24px;font-weight:700;line-height:1.18;overflow-wrap:break-word;text-wrap:balance}.ww-verdict p{margin:0;font-size:13px;line-height:1.5;color:rgba(18,11,38,.72)}.ww-roast-meta{max-width:180px;text-align:right}
+.ww-callouts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}.ww-callouts li{display:flex;gap:10px;padding:12px 0;border-top:2px solid rgba(18,11,38,.14);font-size:13px;line-height:1.45}.ww-callouts li:first-child{border-top:0;padding-top:2px}.ww-callouts svg{flex:none;margin-top:1px;color:var(--tier)}
+.ww-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.ww-stat{background:var(--cream);border:3px solid var(--line);border-radius:1.25rem;box-shadow:var(--hard-sm);padding:18px}.ww-stat-icon{width:38px;height:38px;display:grid;place-items:center;border:3px solid var(--line);border-radius:11px;margin-bottom:18px;color:var(--ink)}.ww-stat:nth-child(1) .ww-stat-icon{background:var(--cyan)}.ww-stat:nth-child(2) .ww-stat-icon{background:var(--yellow)}.ww-stat:nth-child(3) .ww-stat-icon{background:var(--coral);color:var(--cream)}.ww-stat:nth-child(4) .ww-stat-icon{background:var(--lime)}
+.ww-stat-value{font-family:var(--font-title);font-size:29px;font-weight:800;line-height:1}.ww-stat-label{margin-top:6px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.ww-footer{display:flex;justify-content:space-between;gap:20px;margin-top:16px;padding:12px 2px;color:rgba(255,244,228,.62);font-size:11px;line-height:1.4}
+.ww-empty{max-width:560px;margin:70px auto;background:var(--cream);border:3px solid var(--line);border-radius:2rem;box-shadow:var(--hard);padding:36px;text-align:center}.ww-empty-icon{width:62px;height:62px;display:grid;place-items:center;margin:0 auto 18px;background:var(--yellow);border:3px solid var(--line);border-radius:14px;box-shadow:var(--hard-sm)}.ww-empty h1{font-family:var(--font-title);font-size:34px;font-weight:800;margin:0}.ww-empty p{color:var(--muted);line-height:1.55;margin:10px 0 22px}
+@media(max-width:980px){.ww-hero{grid-template-columns:1fr;padding:24px}.ww-hero:after{display:none}.ww-score{width:130px;height:130px}.ww-main{grid-template-columns:1fr}.ww-route{height:360px}.ww-roast-band{grid-template-columns:1fr}.ww-roast-meta{max-width:none;text-align:left}}
 @media(max-width:760px){.ww-route{height:330px}.ww-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ww-footer{flex-direction:column}.ww-toolbar .ww-action span{display:none}.ww-verdict blockquote{font-size:21px}}
 @media(max-width:430px){.ww-title{font-size:38px}.ww-hero{padding:20px}.ww-route{height:290px}.ww-stat{padding:14px}.ww-stat-value{font-size:23px}.ww-panel{padding:15px}.ww-panel-head{display:block}.ww-legend{margin-top:8px}}
-@media print{.ww-no-print{display:none!important}.ww-page{padding:0!important}.ww-hero,.ww-panel,.ww-stat{break-inside:avoid;box-shadow:none}.ww-route{height:330px}.ww-main{grid-template-columns:1.45fr .72fr}}
+@media print{.ww-no-print{display:none!important}.ww-page{padding:0!important}.ww-hero,.ww-panel,.ww-stat,.ww-empty{break-inside:avoid;box-shadow:none;border-width:1px}.ww-hero{border-bottom:6px solid var(--tier)}.ww-kicker,.ww-chip,.ww-empty-icon,.ww-stat-icon{box-shadow:none;border-width:1px}.ww-route{height:330px;border-width:1px}.ww-footer{color:var(--muted)}.ww-main{grid-template-columns:1.45fr .72fr}}
 `;
 
 const getTier = (score) => RESULT_TIERS.find((tier) => score <= tier.max) || RESULT_TIERS.at(-1);
@@ -187,7 +192,7 @@ const ReportPage = () => {
 
       <section className="ww-panel ww-verdict ww-roast-band" style={{ marginTop: 16 }}>
         <div>
-          <p className="ww-kicker" style={{ color: '#425028', marginBottom: 10 }}>Round summary</p>
+          <p className="ww-kicker" style={{ marginBottom: 12 }}>Round summary</p>
           <blockquote>{summary}</blockquote>
         </div>
         <p className="ww-roast-meta">Based on {game.direction_changes} direction change{game.direction_changes === 1 ? '' : 's'} and a {game.drift_direction === 'center' ? 'centered' : `${game.drift_direction}-drifting`} finish.</p>
@@ -208,15 +213,15 @@ const ReportPage = () => {
           </div>
           <div className="ww-route">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Tracked walking route compared with a straight line">
-              <line className="ww-route-ideal" x1="50" y1="92" x2="50" y2="8" />
+              <line className="ww-route-ideal" x1="50" y1="92" x2="50" y2="8" vectorEffect="non-scaling-stroke" />
               {routePoints && <>
                 <polyline className="ww-route-shadow" points={routePoints} vectorEffect="non-scaling-stroke" />
                 <polyline className="ww-route-path" points={routePoints} vectorEffect="non-scaling-stroke" />
-                <circle cx={game.route[0].x} cy={game.route[0].y} r="2.2" fill="#182126" vectorEffect="non-scaling-stroke" />
-                <circle cx={game.route.at(-1).x} cy={game.route.at(-1).y} r="2.8" fill="#d9f46a" stroke="#182126" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                <circle cx={game.route[0].x} cy={game.route[0].y} r="2.4" fill="#120b26" vectorEffect="non-scaling-stroke" />
+                <circle cx={game.route.at(-1).x} cy={game.route.at(-1).y} r="3" fill="#ffd23f" stroke="#120b26" strokeWidth="1.2" vectorEffect="non-scaling-stroke" />
               </>}
-              <text x="55" y="94" fontSize="3.2" fontWeight="800" fill="#617078">START</text>
-              <text x="55" y="10" fontSize="3.2" fontWeight="800" fill="#617078">FINISH</text>
+              <text x="55" y="94" fontSize="3.2" fontWeight="800" fill="#5b4a7d">START</text>
+              <text x="55" y="10" fontSize="3.2" fontWeight="800" fill="#5b4a7d">FINISH</text>
             </svg>
           </div>
         </section>

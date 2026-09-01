@@ -132,13 +132,13 @@ const VideoRecorder = ({ onRecordingComplete, isLoading }) => {
 
   return (
     <div className="w-full max-w-2xl mx-auto glow-card rounded-lg">
-      <div className={`surface relative flex flex-col items-center overflow-hidden rounded-lg ${isLoading ? 'pointer-events-none opacity-50' : ''}`}>
-        <div className="relative h-72 w-full bg-ink-900">
+      <div className={`relative flex flex-col items-center overflow-hidden rounded-lg border-[3px] border-ink-900 bg-cream text-ink-900 shadow-lift ${isLoading ? 'pointer-events-none opacity-50' : ''}`}>
+        <div className="relative h-72 w-full border-b-[3px] border-ink-900 bg-void-900">
           <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
           {phase === 'recording' && (
-            <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5">
-              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-              <span className="font-mono text-xs font-semibold text-white">REC {mmss}</span>
+            <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full border-[3px] border-ink-900 bg-punch px-3 py-1.5 shadow-soft">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full border-2 border-ink-900 bg-zap" />
+              <span className="font-mono text-xs font-extrabold uppercase tracking-[0.12em] text-cream">REC {mmss}</span>
             </div>
           )}
         </div>
@@ -146,19 +146,19 @@ const VideoRecorder = ({ onRecordingComplete, isLoading }) => {
         <div className="flex w-full flex-col items-center gap-3 p-6 text-center">
           {phase === 'recording' ? (
             <>
-              <p className="text-sm text-ink-500">Three spins, then walk the straight line. Stop when you are done.</p>
-              <button onClick={stopRecording} className="inline-flex items-center gap-2 rounded-lg bg-ink-900 px-6 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
+              <p className="text-sm font-semibold text-ink-600">Three spins, then walk the straight line. Stop when you are done.</p>
+              <button onClick={stopRecording} className="inline-flex items-center gap-2 rounded-full border-[3px] border-ink-900 bg-ink-900 px-7 py-3 font-display text-sm font-extrabold uppercase tracking-[0.12em] text-cream shadow-soft transition-transform duration-200 hover:-translate-y-0.5 hover:-rotate-2">
                 <Square className="h-4 w-4" /> I&apos;m done
               </button>
             </>
           ) : (
             <>
-              <p className="text-base font-semibold text-ink-800">Record the round from this camera</p>
-              <p className="text-xs font-medium text-ink-400">Full body in frame — you control when it stops.</p>
+              <p className="font-display text-lg font-extrabold text-ink-900">Record the round from this camera</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">Full body in frame — you control when it stops.</p>
               <button
                 onClick={startRecording}
                 disabled={phase !== 'ready'}
-                className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-full border-[3px] border-ink-900 bg-punch px-7 py-3 font-display text-sm font-extrabold uppercase tracking-[0.12em] text-cream shadow-soft transition-transform duration-200 hover:-translate-y-0.5 hover:-rotate-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:rotate-0"
               >
                 <Video className="h-4 w-4" /> Start recording
               </button>
@@ -168,10 +168,10 @@ const VideoRecorder = ({ onRecordingComplete, isLoading }) => {
       </div>
 
       {error && (
-        <div className="mt-3 flex items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50/80 px-4 py-3">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-red-500" />
-          <p className="text-sm font-medium text-red-700">{error}</p>
-          <button onClick={openCamera} className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-700 underline">
+        <div className="mt-3 flex items-center justify-center gap-3 rounded-lg border-[3px] border-ink-900 bg-punch px-4 py-3 shadow-soft">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-cream" />
+          <p className="text-sm font-bold text-cream">{error}</p>
+          <button onClick={openCamera} className="inline-flex items-center gap-1.5 rounded-full border-[3px] border-ink-900 bg-zap px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-ink-900 shadow-soft transition-transform duration-200 hover:-translate-y-0.5">
             <RefreshCw className="h-3.5 w-3.5" /> Retry
           </button>
         </div>

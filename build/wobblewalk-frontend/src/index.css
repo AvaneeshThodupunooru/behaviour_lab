@@ -12,10 +12,15 @@
 
 @layer base {
   :root {
-    --paper: #eef0f7;
-    --brand: #5f49d9;
-    --brand-2: #7363e8;
-    --accent: #18c6a6;
+    --paper: #120b26;
+    --brand: #ff4d8d;
+    --brand-2: #b79cff;
+    --accent: #3fe0a0;
+    --cream: #fff4e4;
+    --void-950: #120b26;
+    --zap: #ffd23f;
+    --hard: 6px 6px 0 0 #120b26;
+    --hard-sm: 4px 4px 0 0 #120b26;
     --mx: 50%;
     --my: 50%;
   }
@@ -27,7 +32,7 @@
   }
 
   body {
-    @apply text-ink-900 font-sans antialiased;
+    @apply text-cream font-sans antialiased;
     background-color: var(--paper);
     min-height: 100vh;
     overflow-x: hidden;
@@ -39,8 +44,14 @@
   }
 
   ::selection {
-    background: rgba(95, 73, 217, 0.22);
-    color: #1f2630;
+    background: var(--zap);
+    color: var(--void-950);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--zap);
+    outline-offset: 3px;
+    border-radius: 8px;
   }
 
   ::-webkit-scrollbar {
@@ -51,13 +62,13 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(#9a92e0, #6f63d8);
+    background: linear-gradient(#b79cff, #ff4d8d);
     border: 3px solid transparent;
     background-clip: content-box;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(#7363e8, #5f49d9);
+    background: linear-gradient(#ffd23f, #ff4d8d);
     background-clip: content-box;
   }
 }
@@ -124,6 +135,22 @@
   to { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
 }
 @keyframes bar-stripe { to { background-position: 28px 0; } }
+@keyframes tt-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+@keyframes tt-wiggle {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+@keyframes tt-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+@keyframes tt-breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
 
 /* ============================================================= *
  *  COMPONENTS
@@ -136,11 +163,11 @@
     z-index: 2;
     pointer-events: none;
     background-image: theme('backgroundImage.grain');
-    opacity: 0.45;
+    opacity: 0.16;
     mix-blend-mode: soft-light;
   }
 
-  /* cursor-following ambient glow (positioned via JS-set --gx/--gy) */
+  /* cursor-following ambient glow (positioned via JS-set transform) */
   .cursor-glow {
     position: fixed;
     top: 0;
@@ -151,55 +178,38 @@
     border-radius: 9999px;
     pointer-events: none;
     z-index: 1;
-    background: radial-gradient(circle, rgba(115, 99, 232, 0.16), rgba(24, 198, 166, 0.05) 45%, transparent 70%);
+    background: radial-gradient(circle, rgba(183, 156, 255, 0.20), rgba(255, 77, 141, 0.08) 45%, transparent 70%);
     transform: translate(var(--gx, -100px), var(--gy, -100px));
     transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
     mix-blend-mode: normal;
   }
 
-  /* glass card */
+  /* cream card with a hard offset shadow - the core surface of this design */
   .surface {
-    @apply bg-white/70 backdrop-blur-xl border border-white/60 ring-1 ring-ink-900/[0.04] shadow-soft;
+    @apply bg-cream text-ink-900 border-[3px] border-ink-900 shadow-lift;
   }
 
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.24em] text-ink-400;
+    @apply inline-flex items-center gap-2 rounded-full border-[3px] border-ink-900 bg-mint
+           px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-ink-900 shadow-soft;
   }
 
-  /* animated gradient text */
+  /* headline accent - solid, with the design's hard drop shadow */
   .gradient-text {
-    background: linear-gradient(100deg, #5f49d9 0%, #7363e8 28%, #18c6a6 52%, #7363e8 74%, #5f49d9 100%);
-    background-size: 220% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: gradient-pan 7s linear infinite;
+    color: var(--zap);
+    text-shadow: 0 5px 0 rgba(18, 11, 38, 0.45);
   }
 
-  /* conic glow border that lights up (always-on subtle, brighter on hover) */
+  /* hover lift for bordered cards (no soft glow in this design language) */
   .glow-card {
     position: relative;
     isolation: isolate;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .glow-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    padding: 1.4px;
-    background: conic-gradient(from var(--angle),
-      transparent 0%, rgba(95, 73, 217, 0.9) 12%, transparent 30%,
-      transparent 60%, rgba(24, 198, 166, 0.9) 75%, transparent 92%);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: border-spin 6s linear infinite;
-    opacity: 0.35;
-    transition: opacity 0.4s ease;
-    z-index: 2;
+  .glow-card:hover {
+    transform: translateY(-3px) rotate(-0.6deg);
   }
-  .glow-card:hover::before { opacity: 1; }
 
   /* radial spotlight that tracks the pointer (--mx/--my set in JS) */
   .spotlight {
@@ -210,7 +220,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: radial-gradient(240px circle at var(--mx) var(--my), rgba(115, 99, 232, 0.16), transparent 60%);
+    background: radial-gradient(240px circle at var(--mx) var(--my), rgba(183, 156, 255, 0.22), transparent 60%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -240,7 +250,7 @@
     height: 100%;
     pointer-events: none;
     transform: translateX(-150%) skewX(-18deg);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 244, 228, 0.45), transparent);
     transition: none;
     z-index: 3;
   }
@@ -250,26 +260,25 @@
 
   /* buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full font-semibold
-           transition-all duration-200 active:scale-[0.97] focus:outline-none
-           focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2;
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-extrabold
+           border-[3px] border-ink-900 transition-all duration-200 focus:outline-none;
   }
   .btn-primary {
-    @apply btn shine relative text-white px-6 py-2.5 shadow-lift;
-    background-image: linear-gradient(120deg, #1f2630, #2a2350 40%, #4f3bbe 100%);
-    background-size: 160% auto;
+    @apply btn shine relative bg-punch text-cream px-6 py-2.5 shadow-soft;
   }
   .btn-primary:hover {
-    background-position: right center;
-    @apply shadow-glow -translate-y-0.5;
+    @apply -translate-y-0.5 rotate-[1.5deg] bg-brand-400 shadow-lift;
+  }
+  .btn-primary:active {
+    @apply translate-y-px shadow-none;
   }
   .btn-ghost {
-    @apply btn text-ink-500 px-4 py-2 hover:text-ink-900 hover:bg-white/60;
+    @apply btn border-transparent bg-transparent px-4 py-2 text-cream/70 hover:text-cream hover:bg-cream/10;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-900/10
-           bg-white/60 backdrop-blur px-3 py-1 text-[11px] font-semibold text-ink-600;
+    @apply inline-flex items-center gap-1.5 rounded-full border-[3px] border-ink-900
+           bg-cream px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.1em] text-ink-900 shadow-soft;
   }
 
   /* scroll-reveal base */
@@ -294,11 +303,13 @@
     animation: bar-stripe 0.8s linear infinite;
   }
 
-  /* marquee */
+  /* rotated marquee band */
   .marquee {
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    background: var(--brand);
+    border-top: 4px solid var(--void-950);
+    border-bottom: 4px solid var(--void-950);
+    transform: rotate(-1deg);
   }
   .marquee-track {
     display: inline-flex;
@@ -314,6 +325,10 @@
   .animate-float { animation: float-y 6s ease-in-out infinite; }
   .animate-spin-slow { animation: spin-slow 18s linear infinite; }
   .animate-spin-rev { animation: spin-rev 26s linear infinite; }
+  .animate-bob { animation: tt-bob 3.4s ease-in-out infinite; }
+  .animate-wiggle { animation: tt-wiggle 2.6s ease-in-out infinite; }
+  .animate-twinkle { animation: tt-twinkle 2.8s ease-in-out infinite; }
+  .animate-breath { animation: tt-breath 1.6s ease-in-out infinite; }
   .perspective { perspective: 1000px; }
   /* shows only when the document is printed / exported to PDF */
   .print-only { display: none; }
@@ -384,10 +399,10 @@
     padding: 0 !important;
   }
 
-  /* glass cards -> flat bordered document blocks */
+  /* cream cards -> flat bordered document blocks */
   .surface {
     background: #fff !important;
-    border: 1px solid #c7cad4 !important;
+    border: 1px solid #120b26 !important;
     border-radius: 6px !important;
     backdrop-filter: none !important;
   }
@@ -397,16 +412,17 @@
     background: #fff !important;
     color: #111 !important;
     border: 1px solid #c7cad4 !important;
-    border-left: 4px solid #4f3bbe !important;
+    border-left: 4px solid #ff4d8d !important;
     border-radius: 6px !important;
   }
   .report-hero * { color: #111 !important; }
 
-  /* solid ink for animated gradient text when printed */
+  /* solid ink for the accent headline when printed */
   .gradient-text {
-    -webkit-text-fill-color: #1f2630 !important;
-    color: #1f2630 !important;
+    -webkit-text-fill-color: #120b26 !important;
+    color: #120b26 !important;
     background: none !important;
+    text-shadow: none !important;
   }
 
   /* keep logical blocks from splitting across pages */

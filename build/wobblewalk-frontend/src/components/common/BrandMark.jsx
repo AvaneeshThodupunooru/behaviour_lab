@@ -1,14 +1,13 @@
 import React from 'react';
 
-// A straight route splitting into two possible wobble paths.
+// THE THING star, with the straight route splitting into two wobble paths
+// tucked underneath it.
 const BrandMark = ({ className = 'w-9 h-9' }) => (
   <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden="true">
-    <rect width="32" height="32" rx="9" className="fill-ink-900" />
-    <path d="M8 22V10" stroke="#7363e8" strokeWidth="2.4" strokeLinecap="round" />
-    <path d="M8 16C13 16 13 10 18 10" stroke="#7363e8" strokeWidth="2.4" strokeLinecap="round" />
-    <path d="M8 16C13 16 13 22 18 22" stroke="#9184f0" strokeWidth="2.4" strokeLinecap="round" opacity="0.7" />
-    <circle cx="22" cy="10" r="2.4" fill="#7363e8" />
-    <circle cx="22" cy="22" r="2.4" fill="#9184f0" />
+    <rect x="1.5" y="1.5" width="29" height="29" rx="9" fill="#120b26" stroke="#120b26" strokeWidth="3" />
+    <path d="M16 4.4l2.3 7.5L25.8 14l-7.5 2.1L16 23.6l-2.3-7.5L6.2 14l7.5-2.1Z" fill="#ffd23f" />
+    <path d="M8.5 27C12 27 12 22.5 16 22.5" stroke="#ff4d8d" strokeWidth="2.2" strokeLinecap="round" />
+    <path d="M16 22.5C20 22.5 20 27 23.5 27" stroke="#b79cff" strokeWidth="2.2" strokeLinecap="round" />
   </svg>
 );
 

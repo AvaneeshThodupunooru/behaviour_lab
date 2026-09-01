@@ -3,21 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Behavior Lab — Gaze and Pressure Clock</title>
+  <title>THE THING — Gaze and Pressure Clock</title>
+  <meta name="theme-color" content="#120b26" />
   <link rel="stylesheet" href="../gaze/style.css" />
   <link rel="stylesheet" href="../timer/styles.css" />
   <script src="https://api.gazerecorder.com/GazeCloudAPI.js"></script>
   <style>
-    #merged-calibration-screen { position: fixed; inset: 0; z-index: 2001; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg); }
+    #merged-calibration-screen {
+      position: fixed; inset: 0; z-index: 2001; display: flex; align-items: center;
+      justify-content: center; padding: 24px; background: var(--bg); overflow: hidden;
+    }
     #merged-calibration-screen[hidden] { display: none; }
-    #merged-calibration-screen .panel { text-align: center; }
+    #merged-calibration-screen .panel { position: relative; z-index: 1; text-align: center; }
+    #merged-calibration-screen .tt-blob { position: absolute; }
   </style>
 </head>
 <body>
   <!-- One GazeCloud-owned calibration, shared by both phases. -->
   <section id="merged-calibration-screen">
+    <span class="tt-blob tt-blob--a" aria-hidden="true"></span>
+    <span class="tt-blob tt-blob--b" aria-hidden="true"></span>
     <div class="panel">
-      <p class="eyebrow">Behavior Lab</p>
+      <p class="eyebrow">THE THING</p>
       <h1>Eye tracking setup</h1>
       <p id="merged-calibration-status" class="body-text body-text--muted">Allow camera access, then complete the calibration shown by the eye tracker.</p>
       <button id="merged-start" class="btn btn--primary" type="button">Start calibration</button>

@@ -3,34 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Behavior Lab — Leaderboard</title>
+  <meta name="theme-color" content="#120b26" />
+  <title>THE THING — Leaderboard</title>
   <link rel="stylesheet" href="/shell.css" />
   <style>
-    .leaderboard-wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px; }
-    .leaderboard-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-    .leaderboard-head h1 { margin: 0; font-size: 28px; }
-    .leaderboard-head p { margin: 6px 0 0; color: var(--muted); }
-    .updated { color: var(--muted); font-size: 12px; white-space: nowrap; }
-    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+    .leaderboard-wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 40px 20px 80px; }
+    .leaderboard-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .leaderboard-head h1 { margin: 10px 0 0; font-size: clamp(2rem, 6vw, 3rem); }
+    .leaderboard-head p { margin: 8px 0 0; color: rgba(255, 244, 228, 0.62); font-size: 14px; }
+    .updated {
+      color: var(--void-950); background: var(--zap); border: 2px solid var(--void-950);
+      border-radius: 999px; padding: 5px 13px; font: 800 11px var(--font-body);
+      text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; box-shadow: var(--hard-sm);
+    }
+    .table-wrap {
+      overflow-x: auto; border: 3px solid var(--void-950); border-radius: 1.5rem;
+      background: var(--cream); color: var(--void-950); box-shadow: var(--hard);
+    }
     table { width: 100%; border-collapse: collapse; min-width: 660px; }
-    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--line); }
-    th { color: var(--muted); font: 600 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+    th, td { padding: 15px 17px; text-align: left; border-bottom: 2px solid rgba(18, 11, 38, .12); }
+    th {
+      background: var(--void-900); color: var(--cream);
+      font: 800 10px var(--font-body); letter-spacing: .14em; text-transform: uppercase;
+      border-bottom: 3px solid var(--void-950);
+    }
+    tbody tr:nth-child(even) { background: rgba(183, 156, 255, .12); }
     tr:last-child td { border-bottom: none; }
-    .rank, .score { font-weight: 800; }
-    .score { color: var(--good); font-size: 16px; }
-    .breakdown { color: var(--muted); font: 12px var(--font-mono); }
-    .empty { padding: 28px; color: var(--muted); text-align: center; }
+    .rank { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
+    td:nth-child(2) { font-weight: 700; }
+    .score {
+      font-family: var(--font-display); font-weight: 800; font-size: 17px; color: var(--void-950);
+    }
+    .breakdown { color: rgba(18, 11, 38, .6); font: 600 12px var(--font-mono); }
+    .empty { padding: 30px; color: rgba(18, 11, 38, .55); text-align: center; font-weight: 600; }
   </style>
 </head>
 <body>
-  <div class="topbar"><span class="brand">BEHAVIOR LAB</span><span class="status-pill status-pill--ok">Live leaderboard</span></div>
+  <div class="tt-backdrop" aria-hidden="true">
+    <span class="tt-blob tt-blob--a"></span>
+    <span class="tt-blob tt-blob--b"></span>
+    <span class="tt-blob tt-blob--c"></span>
+  </div>
+  <div class="topbar">
+    <span class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6Z"/></svg>
+      </span>
+      THE THING
+    </span>
+    <span class="status-pill status-pill--ok">Live leaderboard</span>
+  </div>
+  <div class="tt-marquee-band" aria-hidden="true">
+    <div class="tt-marquee-track">
+      <span>Top of the board ✦ Steady hands ✦ Sharp eyes ✦ Straight lines ✦</span>
+      <span>Top of the board ✦ Steady hands ✦ Sharp eyes ✦ Straight lines ✦</span>
+    </div>
+  </div>
   <main class="leaderboard-wrap">
     <div class="leaderboard-head">
-      <div><h1>Performance leaderboard</h1><p>Completed event sessions only. Refreshes every 10 seconds.</p></div>
+      <div>
+        <span class="tt-eyebrow">Live</span>
+        <h1>Performance leaderboard</h1>
+        <p>Completed event sessions only. Refreshes every 10 seconds.</p>
+      </div>
       <span id="updated" class="updated">Loading…</span>
     </div>
     <div class="table-wrap">
-      <table aria-label="Behavior Lab leaderboard">
+      <table aria-label="THE THING leaderboard">
         <thead><tr><th>Rank</th><th>Participant</th><th>Overall</th><th>Game scores</th></tr></thead>
         <tbody id="leaderboard-body"><tr><td colspan="4" class="empty">Loading leaderboard…</td></tr></tbody>
       </table>

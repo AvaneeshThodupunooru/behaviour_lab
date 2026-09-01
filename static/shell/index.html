@@ -3,31 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Behavior Lab — Event</title>
+  <meta name="theme-color" content="#120b26" />
+  <title>THE THING — Event</title>
   <link rel="stylesheet" href="shell.css" />
 </head>
 <body>
 
+  <!-- Ambient decoration only; nothing here is interactive. -->
+  <div class="tt-backdrop" aria-hidden="true">
+    <span class="tt-blob tt-blob--a"></span>
+    <span class="tt-blob tt-blob--b"></span>
+    <span class="tt-blob tt-blob--c"></span>
+  </div>
+
   <div class="topbar">
-    <span class="brand">BEHAVIOR LAB</span>
+    <span class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6Z"/></svg>
+      </span>
+      THE THING
+    </span>
     <span id="backendStatus" class="status-pill status-pill--unknown">Checking backend…</span>
+  </div>
+
+  <div class="shell-marquee tt-marquee-band" aria-hidden="true">
+    <div class="tt-marquee-track">
+      <span>Eyes ✦ Nerves ✦ Memory ✦ Balance ✦ Five rounds ✦ One score ✦</span>
+      <span>Eyes ✦ Nerves ✦ Memory ✦ Balance ✦ Five rounds ✦ One score ✦</span>
+    </div>
   </div>
 
   <main id="app">
 
     <!-- WELCOME -->
     <section id="screen-welcome" class="screen">
-      <div class="card card--center">
-        <h1>Behavior Lab</h1>
-        <p class="muted">Four interactive activities: Eye-Tracking Calibration &rarr; Pressure Clock &rarr; Gaze Visual Recall &rarr; DEADPAN &rarr; WobbleWalk.</p>
-        <button id="btnStart" class="btn btn--primary btn--large">Start new participant</button>
+      <div class="card card--center card--void">
+        <span class="hero-tagline">Step up. Get measured.</span>
+        <div class="hero-letters" aria-label="THE THING">
+          <span style="--tilt:-5deg;color:var(--zap)"><b style="animation-delay:0s">T</b></span>
+          <span style="--tilt:3deg;color:var(--punch)"><b style="animation-delay:.33s">H</b></span>
+          <span style="--tilt:-2deg;color:var(--mint)"><b style="animation-delay:.66s">E</b></span>
+          <span class="hero-gap"><b>&nbsp;</b></span>
+          <span style="--tilt:4deg;color:var(--sky)"><b style="animation-delay:.99s">T</b></span>
+          <span style="--tilt:-4deg;color:var(--tang)"><b style="animation-delay:1.32s">H</b></span>
+          <span style="--tilt:2deg;color:var(--lilac)"><b style="animation-delay:1.65s">I</b></span>
+          <span style="--tilt:-3deg;color:var(--zap)"><b style="animation-delay:1.98s">N</b></span>
+          <span style="--tilt:5deg;color:var(--punch)"><b style="animation-delay:.15s">G</b></span>
+        </div>
+        <p class="muted">Five interactive rounds: Eye-Tracking Calibration &rarr; Pressure Clock &rarr; Gaze Visual Recall &rarr; DEADPAN &rarr; WobbleWalk.</p>
+        <div class="actions" style="justify-content:center">
+          <button id="btnStart" class="btn btn--primary btn--large">Start new participant</button>
+        </div>
+        <p class="hero-cue">come play</p>
       </div>
     </section>
 
     <!-- PARTICIPANT INFO -->
     <section id="screen-participant" class="screen" hidden>
       <div class="card">
-        <h2>Participant information</h2>
+        <span class="tt-eyebrow">Step 1</span>
+        <h2 style="margin-top:14px">Participant information</h2>
         <form id="participantForm">
           <label for="participantId">Participant ID <span class="req">*</span></label>
           <input id="participantId" name="participantId" type="text" placeholder="STU-00123" required autocomplete="off" />
@@ -50,7 +85,8 @@
       <div class="card">
         <div class="checklist-head">
           <div>
-            <h2>Session <span id="sessionIdLabel" class="mono"></span></h2>
+            <span class="tt-eyebrow" style="background:var(--sky)">Run sheet</span>
+            <h2 style="margin-top:14px">Session <span id="sessionIdLabel" class="mono"></span></h2>
             <p class="muted" id="participantLabel"></p>
           </div>
           <button id="btnRefreshStatus" class="btn btn--ghost btn--small">Refresh status</button>
@@ -60,7 +96,7 @@
 
         <div class="actions actions--spread">
           <button id="btnStartNewParticipant" class="btn btn--ghost">Start new participant</button>
-          <div class="actions">
+          <div class="actions" style="margin-top:0">
             <button id="btnFinishSession" class="btn btn--ghost">Finish session</button>
             <button id="btnContinue" class="btn btn--primary btn--large">Continue</button>
           </div>
@@ -71,7 +107,8 @@
     <!-- FINAL REPORT -->
     <section id="screen-report" class="screen" hidden>
       <div class="card">
-        <h2>Your Behavior Lab Report</h2>
+        <span class="tt-eyebrow" style="background:var(--tang)">Results</span>
+        <h2 style="margin-top:14px">Your THE THING report</h2>
         <p class="muted" id="reportMeta"></p>
         <p id="reportDisclaimer" class="disclaimer"></p>
         <div id="reportBody" class="report-body"></div>
