@@ -3,7 +3,8 @@
 
   var GAME_DEFS = [
     { key: 'timer', label: 'Gaze + Pressure Clock', path: '/games/gaze-timer/' },
-    { key: 'deadpan', label: 'DEADPAN — Try Not to Laugh', path: '/games/deadpan/' }
+    { key: 'deadpan', label: 'DEADPAN — Try Not to Laugh', path: '/games/deadpan/' },
+    { key: 'wobblewalk', label: 'WobbleWalk — Walk the Line', path: '/games/wobblewalk/' }
   ];
 
   var state = {
@@ -134,10 +135,19 @@
     return data;
   }
 
+  function isGameComplete(doc, key) {
+    if (!doc || !doc.games) return false;
+    if (key === 'timer') {
+      var tStatus = doc.games.timer && doc.games.timer.status;
+      var gStatus = doc.games.gaze && doc.games.gaze.status;
+      return tStatus === 'completed' && gStatus === 'completed';
+    }
+    return doc.games[key] && doc.games[key].status === 'completed';
+  }
+
   function firstIncompleteGame(doc) {
     for (var i = 0; i < GAME_DEFS.length; i++) {
-      var status = doc.games && doc.games[GAME_DEFS[i].key] && doc.games[GAME_DEFS[i].key].status;
-      if (status !== 'completed') return GAME_DEFS[i];
+      if (!isGameComplete(doc, GAME_DEFS[i].key)) return GAME_DEFS[i];
     }
     return null;
   }
@@ -151,8 +161,7 @@
     var next = firstIncompleteGame(doc);
 
     GAME_DEFS.forEach(function (game) {
-      var gameState = (doc.games && doc.games[game.key]) || { status: 'pending' };
-      var isCompleted = gameState.status === 'completed';
+      var isCompleted = isGameComplete(doc, game.key);
       var isCurrent = !isCompleted && next && next.key === game.key;
 
       var li = document.createElement('li');
@@ -200,8 +209,10 @@
     }
     if (state.sessionDoc && state.sessionDoc.games && startIndex !== -1) {
       for (var ni = startIndex + 1; ni < GAME_DEFS.length; ni++) {
-        var st = state.sessionDoc.games[GAME_DEFS[ni].key] && state.sessionDoc.games[GAME_DEFS[ni].key].status;
-        if (st !== 'completed') { next = GAME_DEFS[ni]; break; }
+        if (!isGameComplete(state.sessionDoc, GAME_DEFS[ni].key)) {
+          next = GAME_DEFS[ni];
+          break;
+        }
       }
     }
     var nextUrl;
@@ -225,9 +236,6 @@
       state.sessionDoc = doc;
       renderChecklist(doc);
     } catch (err) {
-      // Stale or invalid session id (e.g. old bookmark, or backend was
-      // reset between events) - don't strand the operator, send them
-      // back to start a fresh participant instead of showing a dead page.
       setSessionIdInUrl('');
       goToParticipantForm();
       el.participantError.textContent = 'Could not load that session (' + err.message + '). Start a new participant below.';
@@ -252,7 +260,7 @@
   // ---------------------------------------------------------------------
   // Screen: Final report
   // ---------------------------------------------------------------------
-  var GAME_ORDER_FOR_REPORT = ['timer', 'gaze', 'deadpan'];
+  var GAME_ORDER_FOR_REPORT = ['gaze', 'timer', 'deadpan', 'wobblewalk'];
 
   function renderMetricGrid(entries) {
     var dl = document.createElement('dl');
@@ -270,27 +278,108 @@
   }
 
   function getVibe(score, maxScore) {
-    if (score === null || score === undefined) return 'Your lab snapshot is still loading.';
+    if (score === null || score === undefined) return 'Your lab snapshot is ready.';
     var pct = score / maxScore;
-    if (pct >= 0.85) return 'LASER FOCUS — you came to play.';
-    if (pct >= 0.70) return 'PRETTY SHARP — solid run.';
-    if (pct >= 0.50) return 'CHAOTIC NEUTRAL — interesting choices.';
-    return 'WILD CARD — the lab definitely got some data.';
+    if (pct >= 0.85) return 'HIGH CONSISTENCY & RECALL';
+    if (pct >= 0.70) return 'SOLID PERFORMANCE ACROSS ACTIVITIES';
+    if (pct >= 0.50) return 'BALANCED PARTICIPATION';
+    return 'SESSION COMPLETED';
+  }
+
+  function renderGazeImageOverlay(canvas, imgUrl, samples) {
+    var ctx = canvas.getContext('2d');
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      canvas.width = img.naturalWidth || 600;
+      canvas.height = img.naturalHeight || 400;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      if (!samples || samples.length === 0) return;
+
+      // Draw gaze scanpath (connecting line)
+      ctx.strokeStyle = 'rgba(255, 77, 94, 0.65)';
+      ctx.lineWidth = Math.max(2, canvas.width * 0.004);
+      ctx.beginPath();
+      samples.forEach(function (pt, idx) {
+        if (idx === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      });
+      ctx.stroke();
+
+      // Draw fixation points
+      samples.forEach(function (pt) {
+        ctx.fillStyle = 'rgba(255, 200, 87, 0.75)';
+        ctx.beginPath();
+        var radius = Math.max(3, canvas.width * 0.007);
+        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 77, 94, 0.9)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+    };
+    img.onerror = function () {
+      canvas.width = 400;
+      canvas.height = 250;
+      ctx.fillStyle = '#f1f1ee';
+      ctx.fillRect(0, 0, 400, 250);
+      ctx.fillStyle = '#667079';
+      ctx.font = '13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Poster image', 200, 125);
+    };
+    img.src = imgUrl;
+  }
+
+  function renderRouteCanvas(canvas, route) {
+    var ctx = canvas.getContext('2d');
+    canvas.width = 300;
+    canvas.height = 300;
+    ctx.fillStyle = '#15151c';
+    ctx.fillRect(0, 0, 300, 300);
+
+    // Center straight reference line
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(150, 20);
+    ctx.lineTo(150, 280);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (!route || route.length === 0) return;
+
+    // Draw actual walked route
+    ctx.strokeStyle = '#49d6c4';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    route.forEach(function (pt, idx) {
+      var px = (pt.x / 100) * 300;
+      var py = (pt.y / 100) * 300;
+      if (idx === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
   }
 
   function renderReport(report) {
-    var maxScore = report.max_score || 75;
+    var maxScore = report.max_score || 100;
     var completedCount = report.games_completed.length;
     el.reportMeta.textContent = 'Participant ' + (report.participant && report.participant.participant_id) +
-      ' — ' + completedCount + ' of 3 tracked activities completed.';
+      ' — ' + completedCount + ' of 4 tracked activities completed.';
     el.reportDisclaimer.textContent = report.disclaimer || '';
 
     el.reportBody.innerHTML = '';
+
+    // 1. Hero overall score block
     var hero = document.createElement('div');
     hero.className = 'report-hero';
     var heroTitle = document.createElement('div');
     heroTitle.className = 'report-hero-title';
-    heroTitle.textContent = 'YOUR LAB SNAPSHOT';
+    heroTitle.textContent = 'YOUR BEHAVIOR LAB REPORT';
     hero.appendChild(heroTitle);
     var vibe = document.createElement('div');
     vibe.className = 'report-vibe';
@@ -302,15 +391,35 @@
       ? '—'
       : Number(report.overall_score).toFixed(1) + ' / ' + maxScore;
     hero.appendChild(score);
+
+    // Score cards bar
+    var breakdownGrid = document.createElement('div');
+    breakdownGrid.className = 'score-breakdown-grid';
+    GAME_ORDER_FOR_REPORT.forEach(function (key) {
+      var s = report.summary && report.summary[key];
+      var item = document.createElement('div');
+      item.className = 'score-breakdown-item';
+      var label = document.createElement('div');
+      label.className = 'score-breakdown-label';
+      label.textContent = key === 'timer' ? 'Pressure' : key === 'gaze' ? 'Gaze Recall' : key === 'deadpan' ? 'DEADPAN' : 'WobbleWalk';
+      var val = document.createElement('div');
+      val.className = 'score-breakdown-val';
+      val.textContent = (s && s.score !== undefined && s.score !== null) ? Number(s.score).toFixed(1) + '/25' : '—';
+      item.appendChild(label);
+      item.appendChild(val);
+      breakdownGrid.appendChild(item);
+    });
+    hero.appendChild(breakdownGrid);
     el.reportBody.appendChild(hero);
 
+    // 2. Activity cards
     GAME_ORDER_FOR_REPORT.forEach(function (key) {
       var summary = report.summary && report.summary[key];
       var card = document.createElement('div');
       card.className = 'report-card';
 
       var heading = document.createElement('h3');
-      heading.textContent = (summary && summary.label) || key;
+      heading.textContent = (summary && summary.label) || (key.charAt(0).toUpperCase() + key.slice(1));
       card.appendChild(heading);
 
       if (summary && summary.score !== undefined && summary.score !== null) {
@@ -325,24 +434,126 @@
         missing.className = 'missing';
         missing.textContent = 'Not completed for this session.';
         card.appendChild(missing);
-      } else if (summary.available === false) {
+        el.reportBody.appendChild(card);
+        return;
+      }
+
+      if (summary.available === false) {
         var unavailable = document.createElement('p');
         unavailable.className = 'missing';
         unavailable.textContent = 'Recorded, but metrics could not be computed' + (summary.reason ? ' (' + summary.reason + ').' : '.');
         card.appendChild(unavailable);
+        el.reportBody.appendChild(card);
+        return;
+      }
+
+      // Activity-specific rendering
+      if (key === 'gaze') {
+        var gazeResultDoc = state.sessionDoc && state.sessionDoc.games && state.sessionDoc.games.gaze && state.sessionDoc.games.gaze.result;
+        var imagesData = (gazeResultDoc && gazeResultDoc.images) || [];
+
+        // Metric grid for basic gaze info
+        var gazeEntries = [
+          ['Images Viewed', '2 (Active Experiment)'],
+          ['Recall Accuracy', summary.recallScore || '—'],
+          ['Gaze Samples Captured', summary.gazeSamplesCollected || '0']
+        ];
+        card.appendChild(renderMetricGrid(gazeEntries));
+
+        // EXACTLY TWO gaze images with gaze paths
+        var imgGrid = document.createElement('div');
+        imgGrid.className = 'gaze-images-grid';
+
+        [1, 2].forEach(function (imgId) {
+          var imgCard = document.createElement('div');
+          imgCard.className = 'gaze-image-card';
+          var imgTitle = document.createElement('h4');
+          imgTitle.textContent = 'Image ' + imgId + ' — Gaze Path';
+          imgCard.appendChild(imgTitle);
+
+          var canvasWrap = document.createElement('div');
+          canvasWrap.className = 'gaze-canvas-wrap';
+          var canvas = document.createElement('canvas');
+          canvasWrap.appendChild(canvas);
+          imgCard.appendChild(canvasWrap);
+
+          var imgInfo = imagesData.find(function (im) { return im.id === imgId; });
+          var samples = imgInfo ? (imgInfo.samples || []) : [];
+          var imgUrl = '/games/gaze-timer/Images/' + imgId + '.png';
+          renderGazeImageOverlay(canvas, imgUrl, samples);
+
+          imgGrid.appendChild(imgCard);
+        });
+        card.appendChild(imgGrid);
+
+        // Delayed recall question breakdown
+        var qResults = (gazeResultDoc && gazeResultDoc.questionResults) || [];
+        if (qResults.length > 0) {
+          var qTitle = document.createElement('h4');
+          qTitle.style.marginTop = '16px';
+          qTitle.style.marginBottom = '6px';
+          qTitle.textContent = 'Recall Questions Breakdown';
+          card.appendChild(qTitle);
+
+          var qList = document.createElement('ul');
+          qList.className = 'recall-questions-list';
+          qResults.forEach(function (q, idx) {
+            var li = document.createElement('li');
+            li.className = 'recall-question-item';
+
+            var qText = document.createElement('div');
+            qText.className = 'recall-q-text';
+            qText.textContent = (idx + 1) + '. (Image ' + q.imageId + ') ' + (q.questionText || 'Recall Question');
+            li.appendChild(qText);
+
+            var qAns = document.createElement('div');
+            qAns.className = 'recall-q-ans';
+            var badge = document.createElement('span');
+            badge.className = q.correct ? 'badge-correct' : 'badge-incorrect';
+            badge.textContent = q.correct ? '✓ Correct' : '✗ Incorrect';
+            qAns.appendChild(badge);
+            qAns.appendChild(document.createTextNode('Selected: ' + (q.selected || 'None') + (q.correct ? '' : ' (Correct: ' + (q.correctAnswer || '—') + ')')));
+            li.appendChild(qAns);
+
+            qList.appendChild(li);
+          });
+          card.appendChild(qList);
+        }
+      } else if (key === 'wobblewalk') {
+        var wwEntries = Object.keys(summary)
+          .filter(function (k) { return k !== 'label' && k !== 'note' && k !== 'score' && k !== 'available'; })
+          .map(function (k) { return [k, summary[k]]; });
+        card.appendChild(renderMetricGrid(wwEntries));
+
+        // Route visualization if route points exist
+        var wwResult = state.sessionDoc && state.sessionDoc.games && state.sessionDoc.games.wobblewalk && state.sessionDoc.games.wobblewalk.result;
+        if (wwResult && wwResult.route && wwResult.route.length > 0) {
+          var routeWrap = document.createElement('div');
+          routeWrap.className = 'route-canvas-wrap';
+          var routeTitle = document.createElement('h4');
+          routeTitle.textContent = 'Walked Route Replay';
+          routeTitle.style.marginBottom = '6px';
+          routeWrap.appendChild(routeTitle);
+          var routeCanvas = document.createElement('canvas');
+          routeWrap.appendChild(routeCanvas);
+          renderRouteCanvas(routeCanvas, wwResult.route);
+          card.appendChild(routeWrap);
+        }
       } else {
         var entries = Object.keys(summary)
           .filter(function (k) { return k !== 'label' && k !== 'note' && k !== 'score'; })
           .map(function (k) { return [k, summary[k]]; });
         card.appendChild(renderMetricGrid(entries));
-        if (summary.note) {
-          var note = document.createElement('p');
-          note.className = 'missing';
-          note.style.marginTop = '10px';
-          note.textContent = summary.note;
-          card.appendChild(note);
-        }
       }
+
+      if (summary.note) {
+        var note = document.createElement('p');
+        note.className = 'missing';
+        note.style.marginTop = '10px';
+        note.textContent = summary.note;
+        card.appendChild(note);
+      }
+
       el.reportBody.appendChild(card);
     });
 
@@ -352,9 +563,9 @@
   async function showReport() {
     if (!state.sessionId) return;
     try {
-      // Ensure the session is marked complete so the leaderboard and backup
-      // reflect it.  Harmless if already complete (just re-sets the timestamp).
       await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/complete', { method: 'POST' }).catch(function () {});
+      var resDoc = await fetchSession(state.sessionId);
+      state.sessionDoc = resDoc;
       var res = await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/report');
       var data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Could not load the report.');

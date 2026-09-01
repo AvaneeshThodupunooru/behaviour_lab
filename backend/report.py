@@ -32,16 +32,14 @@ def _clip(value, low=0.0, high=1.0):
 
 
 def score_gaze(result: dict) -> float:
-    """Score the gaze station from recall questions plus available gaze samples."""
+    """Score the gaze station based purely on recall-question performance."""
     r = result or {}
     questions = r.get("questionResults") or []
-    sample_count = _number(r.get("sampleCount"))
-    gaze_quality = _clip(sample_count / 200)
     if questions:
         correct = sum(1 for q in questions if q.get("correct"))
         recall = correct / len(questions)
-        return 25 * (0.75 * recall + 0.25 * gaze_quality)
-    return 25 * gaze_quality
+        return 25 * recall
+    return 0.0
 
 
 def score_timer(result: dict) -> float:
@@ -58,12 +56,17 @@ def score_timer(result: dict) -> float:
 def score_deadpan(result: dict) -> float:
     """Score the game's existing facial-response inputs, when supplied."""
     r = result or {}
-    # DEADPAN currently receives placeholder/stub inputs while real video
-    # detection is being wired. These values become meaningful automatically
-    # once that detector supplies the existing fields; no scoring change needed.
     intensity = _clip(0.5 * (_number(r.get("laughCount")) / 5) + 0.5 * (_number(r.get("peakScorePct")) / 100))
     return 25 * (1 - intensity)
 
+
+def score_wobblewalk(result: dict) -> float:
+    """Score the walking stability task out of 25."""
+    r = result or {}
+    if r.get("available") is False:
+        return 0.0
+    wobble = _clip(_number(r.get("wobble_score")) / 100)
+    return 25 * (1 - wobble)
 
 
 def summarize_timer(result: dict) -> dict:
@@ -106,10 +109,33 @@ def summarize_deadpan(result: dict) -> dict:
     }
 
 
+def summarize_wobblewalk(result: dict) -> dict:
+    r = result or {}
+    if r.get("available") is False:
+        return {
+            "label": "Walking Stability / Path Metrics",
+            "available": False,
+            "reason": r.get("reason"),
+            "score": 0.0,
+        }
+    return {
+        "label": "Walking Stability / Path Metrics",
+        "wobbleScore": _round(r.get("wobble_score")),
+        "walkDurationSeconds": r.get("walk_duration_seconds"),
+        "meanDeviationPct": _round(r.get("mean_deviation_pct")),
+        "pathEfficiencyPct": _round(r.get("path_efficiency_pct")),
+        "directionChanges": r.get("direction_changes"),
+        "driftDirection": r.get("drift_direction"),
+        "score": _round(score_wobblewalk(result)),
+        "note": "Game performance score only, not a medical or balance assessment.",
+    }
+
+
 SUMMARIZERS = {
     "timer": summarize_timer,
     "gaze": summarize_gaze,
     "deadpan": summarize_deadpan,
+    "wobblewalk": summarize_wobblewalk,
 }
 
 
@@ -131,7 +157,7 @@ def build_report(session_doc: dict) -> dict:
         "completed_at": session_doc.get("completed_at"),
         "games_completed": games_completed,
         "overall_score": _round(sum(scores)) if len(games_completed) == len(SUMMARIZERS) else None,
-        "max_score": 75,
+        "max_score": 100,
         "disclaimer": DISCLAIMER,
         "summary": summary,
     }
