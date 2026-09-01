@@ -258,7 +258,7 @@
     <div class="n mono" id="hudCount">0</div>
     <div class="l">laughs</div>
   </div>
-  <div class="hud-timer mono" id="hudTimer">30s</div>
+  <div class="hud-timer mono" id="hudTimer">46s</div>
 </div>
 
 <!-- Top-left buttons -->
@@ -296,7 +296,7 @@
     <h2>Keep a straight face</h2>
     <ol>
       <li><b>Enable your camera.</b> Everything runs locally in your browser — video never leaves your device.</li>
-      <li><b>Press Start Session</b> in the controls drawer (☰, top-left). You get <b>30 seconds</b> — the round ends and your result is sent automatically when the countdown hits zero.</li>
+      <li><b>Press Start Session</b> in the controls drawer (☰, top-left). You get <b>46 seconds</b> — the round ends and your result is sent automatically when the countdown hits zero.</li>
       <li><b>Watch the corner HUD.</b> The ring shows your live laugh score; the number ticks up every time you're caught.</li>
       <li><b>Load stimulus.</b> Add jokes, GIFs, images or clips to the deck in the drawer, then tap one to throw it fullscreen and try to break yourself (or a friend in the chair).</li>
       <li><b>A laugh only counts once</b> per outburst — there's a short cooldown after each catch so one laugh doesn't rack up the score twice.</li>
@@ -325,7 +325,7 @@
   </div>
 
   <div class="panel-block">
-    <div class="field-label">Session (fixed 30-second challenge)</div>
+    <div class="field-label">Session (fixed 46-second challenge)</div>
     <div class="row">
       <button class="btn primary small" id="startGameBtn">Start Session</button>
       <button class="btn small" id="resetBtn">Reset</button>
@@ -374,10 +374,10 @@ const video = document.getElementById('video');
 let stream = null;
 let running = false;
 let sessionActive = false;
-// Event configuration: always a fixed 30-second timed challenge.
+// Event configuration: 46-second timed challenge with stimulus video.
 let mode = 'timed';
-let duration = 30;
-let timeLeft = 30;
+let duration = 46;
+let timeLeft = 46;
 let timerInterval = null;
 
 let threshold = 0.22;
@@ -393,6 +393,7 @@ let logEntries = [];
 let sessionStartedAt = 0; // for reporting session duration to the event backend
 
 let stimulusDeck = [
+  { type:'video', content:'stimulus.mp4' },
   { type:'text', content:"Why did the scarecrow get a promotion? He was outstanding in his field." },
   { type:'text', content:"I told my computer I needed a break. Now it won't stop sending me vacation ads." },
   { type:'text', content:"Parallel lines have so much in common. It's a shame they'll never meet." },
@@ -566,6 +567,11 @@ function startSession(){
   startGameBtn.textContent = mode==='timed' ? 'Restart' : 'Reset Count';
   closeDrawer();
 
+  // Auto-deploy the stimulus video when session starts
+  if(stimulusDeck && stimulusDeck.length > 0){
+    deployStimulus(stimulusDeck[0]);
+  }
+
   if(mode==='timed'){
     timeLeft = duration;
     hudTimer.classList.add('show');
@@ -642,6 +648,10 @@ document.getElementById('retrySubmitBtn').addEventListener('click', function(){
 
 function endSession(){
   sessionActive = false;
+  stimOverlay.classList.remove('show');
+  closeStim.style.display = 'none';
+  stimOverlayInner.innerHTML = '';
+
   summaryBig.textContent = laughCount;
   summaryOverlay.classList.add('show');
   document.getElementById('submitStatus').textContent = '';
@@ -665,7 +675,7 @@ function renderDeck(){
     }else if(item.type === 'image'){
       const img = document.createElement('img'); img.src = item.content; card.appendChild(img);
     }else if(item.type === 'video'){
-      const v = document.createElement('video'); v.src = item.content; v.muted = true; card.appendChild(v);
+      const v = document.createElement('video'); v.src = item.content; v.muted = true; v.playsInline = true; card.appendChild(v);
     }
     card.addEventListener('click', (e)=>{
       if(e.target.closest('.del')) return;
@@ -690,14 +700,26 @@ function deployStimulus(item){
   }else if(item.type === 'image'){
     const img = document.createElement('img'); img.src = item.content; stimOverlayInner.appendChild(img);
   }else if(item.type === 'video'){
-    const v = document.createElement('video'); v.src = item.content; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+    const v = document.createElement('video');
+    v.src = item.content;
+    v.autoplay = true;
+    v.loop = true;
+    v.playsInline = true;
+    v.play().catch(() => {
+      v.muted = true;
+      v.play().catch(() => {});
+    });
     stimOverlayInner.appendChild(v);
   }
   stimOverlay.classList.add('show');
   closeStim.style.display = 'block';
   closeDrawer();
 }
-closeStim.addEventListener('click', ()=>{ stimOverlay.classList.remove('show'); closeStim.style.display = 'none'; });
+closeStim.addEventListener('click', ()=>{
+  stimOverlay.classList.remove('show');
+  closeStim.style.display = 'none';
+  stimOverlayInner.innerHTML = '';
+});
 
 document.getElementById('addJokeBtn').addEventListener('click', ()=>{
   const el = document.getElementById('jokeInput');
@@ -762,6 +784,9 @@ startGameBtn.addEventListener('click', startSession);
 resetBtn.addEventListener('click', ()=>{
   clearInterval(timerInterval);
   sessionActive = false;
+  stimOverlay.classList.remove('show');
+  closeStim.style.display = 'none';
+  stimOverlayInner.innerHTML = '';
   laughCount = 0; logEntries = [];
   updateCount(); renderLog();
   summaryOverlay.classList.remove('show');
