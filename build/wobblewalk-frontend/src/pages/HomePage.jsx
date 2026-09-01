@@ -9,7 +9,7 @@ import {
   Trophy,
 } from 'lucide-react';
 
-import VideoDropzone from '../components/upload/VideoDropzone.jsx';
+import VideoRecorder from '../components/record/VideoRecorder.jsx';
 import Spinner from '../components/common/Spinner.jsx';
 import Reveal from '../components/common/Reveal.jsx';
 import { analyzeRound } from '../api/analyzeApi.js';
@@ -120,7 +120,9 @@ const HomePage = () => {
           </div>
         )}
 
-        <VideoDropzone onFileSelect={handleFileUpload} />
+        {/* The recorder hands back a File, exactly like the old dropzone did,
+            so everything downstream (analyzeRound -> /api/analyze) is unchanged. */}
+        <VideoRecorder onRecordingComplete={handleFileUpload} isLoading={isProcessing} />
         <p className="mt-4 text-center text-xs text-ink-400">Clear the lane and keep a spotter nearby.</p>
       </section>
 
