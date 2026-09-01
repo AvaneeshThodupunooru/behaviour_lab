@@ -1,0 +1,237 @@
+/* =====================================================================
+   theme.css — the ONE Behavior Lab theme.
+
+   Load this AFTER a station's own stylesheet. It is a pure skin layer:
+   it only ever sets colours, fonts, borders, radii and shadows. It never
+   sets display/position/width/height/padding/margin/flex/grid, so no
+   station's layout or interaction can shift because of this file.
+
+   How it works
+   ------------
+   Each station was built with its own private set of CSS custom
+   properties (timer used --bg/--panel/--teal, deadpan used
+   --alarm/--calm, the shell used --paper/--ink/--accent). Rather than
+   rewriting four stylesheets, this file redefines every one of those
+   legacy names in terms of one canonical --bl-* palette. A station keeps
+   using var(--panel) exactly as before and silently gets the shared
+   colour.
+
+   Add new colours to the --bl-* block only. The legacy aliases below it
+   exist so old stylesheets keep working; don't introduce new ones.
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  /* ---- canonical palette: deep violet base, high-chroma accents ---- */
+  --bl-bg: #150a33;
+  --bl-bg-2: #1d0f45;
+  --bl-surface: #251456;
+  --bl-surface-2: #311c6f;
+  --bl-line: #4d2fa6;
+  --bl-line-soft: #3a2280;
+
+  --bl-text: #fbf8ff;
+  --bl-text-dim: #d9cdf7;
+  --bl-muted: #ab9ada;
+
+  --bl-magenta: #ff2d84;
+  --bl-cyan: #22e0ff;
+  --bl-lime: #b8ff2f;
+  --bl-amber: #ffc21f;
+  --bl-coral: #ff6b3d;
+  --bl-violet: #9b5cff;
+
+  --bl-accent: var(--bl-magenta);
+  --bl-accent-2: var(--bl-cyan);
+  --bl-good: var(--bl-lime);
+  --bl-warn: var(--bl-amber);
+  --bl-bad: var(--bl-coral);
+
+  --bl-grad: linear-gradient(115deg, #ff2d84 0%, #9b5cff 52%, #22e0ff 100%);
+  --bl-grad-soft: linear-gradient(160deg, rgba(255,45,132,0.16), rgba(34,224,255,0.10));
+
+  --bl-font-display: 'Archivo Black', 'Space Grotesk', Impact, sans-serif;
+  --bl-font-body: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --bl-font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+
+  --bl-radius: 14px;
+  --bl-radius-sm: 9px;
+  --bl-glow: 0 0 0 1px rgba(255,45,132,0.30), 0 16px 44px -14px rgba(255,45,132,0.55);
+  --bl-shadow: 0 2px 0 0 rgba(255,255,255,0.05), 0 22px 50px -22px rgba(0,0,0,0.85);
+
+  /* ---- legacy aliases: static/games/timer/styles.css ---- */
+  --bg: var(--bl-bg);
+  --panel: var(--bl-surface);
+  --panel-2: var(--bl-surface-2);
+  --text: var(--bl-text);
+  --muted: var(--bl-muted);
+  --red: var(--bl-magenta);
+  --teal: var(--bl-cyan);
+  --yellow: var(--bl-amber);
+  --blue: var(--bl-violet);
+  --green: var(--bl-lime);
+  --font-display: var(--bl-font-display);
+  --font-mono: var(--bl-font-mono);
+
+  /* ---- legacy aliases: static/games/deadpan/index.html inline <style> ---- */
+  --line: var(--bl-line);
+  --calm: var(--bl-cyan);
+  --warn: var(--bl-amber);
+  --alarm: var(--bl-magenta);
+
+  /* ---- legacy aliases: static/shell/shell.css (was a light theme) ----
+     --ink was shell text on a light --paper background; both flip here. */
+  --ink: var(--bl-text);
+  --paper: var(--bl-bg);
+  --accent: var(--bl-magenta);
+  --good: var(--bl-lime);
+  --bad: var(--bl-coral);
+
+  /* --card is referenced by static/leaderboard/index.html's inline <style>
+     but was never declared in shell.css, so that table used to fall back to
+     transparent. Declaring it here is what gives the leaderboard a surface. */
+  --card: var(--bl-surface);
+}
+
+/* =====================================================================
+   Base surface + typography
+   ===================================================================== */
+
+html { color-scheme: dark; }
+
+body {
+  background-color: var(--bl-bg);
+  background-image:
+    radial-gradient(1100px 620px at 12% -8%, rgba(255,45,132,0.20), transparent 62%),
+    radial-gradient(900px 560px at 92% 4%, rgba(34,224,255,0.16), transparent 60%),
+    radial-gradient(760px 620px at 50% 112%, rgba(155,92,255,0.20), transparent 62%);
+  background-attachment: fixed;
+  color: var(--bl-text);
+  font-family: var(--bl-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--bl-font-display);
+  color: var(--bl-text);
+  letter-spacing: -0.005em;
+}
+
+a { color: var(--bl-cyan); }
+
+.mono, code, pre, kbd { font-family: var(--bl-font-mono); }
+
+/* Small, all-caps kicker used by several stations. */
+.eyebrow {
+  font-family: var(--bl-font-mono);
+  color: var(--bl-magenta);
+  letter-spacing: 0.16em;
+}
+
+.muted, .body-text--muted { color: var(--bl-muted); }
+
+::selection { background: var(--bl-magenta); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--bl-cyan);
+  outline-offset: 2px;
+}
+
+/* =====================================================================
+   Shared surfaces + controls
+
+   .card/.panel/.btn exist in more than one station's stylesheet. Only
+   colour-ish properties are set here so each station keeps its own
+   spacing and layout exactly as it was.
+   ===================================================================== */
+
+.card, .panel, .calibration-panel, .report-card, .game-list {
+  background-color: var(--bl-surface);
+  background-image: var(--bl-grad-soft);
+  border-color: var(--bl-line-soft);
+  border-radius: var(--bl-radius);
+  box-shadow: var(--bl-shadow);
+  color: var(--bl-text);
+}
+
+.game-list li { border-top-color: var(--bl-line-soft); }
+
+.btn {
+  background-color: var(--bl-surface-2);
+  border-color: var(--bl-line);
+  color: var(--bl-text);
+  font-family: var(--bl-font-body);
+  font-weight: 700;
+  border-radius: var(--bl-radius-sm);
+  transition: transform 140ms ease, box-shadow 200ms ease, filter 200ms ease;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.12); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+
+.btn--primary {
+  background-color: transparent;
+  background-image: var(--bl-grad);
+  border-color: transparent;
+  color: #14082e;
+  box-shadow: var(--bl-glow);
+}
+
+.btn--secondary { background-color: var(--bl-surface-2); color: var(--bl-text); }
+.btn--ghost { background-color: transparent; color: var(--bl-text-dim); }
+
+/* =====================================================================
+   Shell-specific repaints
+
+   static/shell/shell.css hardcodes #fff on a few surfaces and pastel
+   backgrounds on its pills/badges, so those can't be reached through a
+   variable. Same selectors, colours only.
+   ===================================================================== */
+
+.topbar {
+  background-color: rgba(21,10,51,0.72);
+  border-bottom-color: var(--bl-line-soft);
+  backdrop-filter: blur(10px);
+}
+
+.brand {
+  font-family: var(--bl-font-display);
+  background-image: var(--bl-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.status-pill { border-color: var(--bl-line-soft); font-family: var(--bl-font-mono); }
+.status-pill--ok { background-color: rgba(184,255,47,0.12); color: var(--bl-lime); border-color: rgba(184,255,47,0.35); }
+.status-pill--bad { background-color: rgba(255,107,61,0.14); color: var(--bl-coral); border-color: rgba(255,107,61,0.38); }
+.status-pill--unknown { background-color: rgba(171,154,218,0.12); color: var(--bl-muted); }
+
+input[type="text"] {
+  background-color: rgba(10,4,26,0.55);
+  border-color: var(--bl-line-soft);
+  color: var(--bl-text);
+  font-family: var(--bl-font-body);
+  border-radius: var(--bl-radius-sm);
+}
+input[type="text"]::placeholder { color: rgba(171,154,218,0.65); }
+
+label { color: var(--bl-text-dim); }
+
+.g-badge { font-family: var(--bl-font-mono); }
+.g-badge--pending { background-color: rgba(171,154,218,0.14); color: var(--bl-muted); }
+.g-badge--current { background-color: rgba(255,194,31,0.18); color: var(--bl-amber); }
+.g-badge--completed { background-color: rgba(184,255,47,0.16); color: var(--bl-lime); }
+
+.overall-score {
+  background-color: rgba(184,255,47,0.10);
+  color: var(--bl-lime);
+  border-radius: var(--bl-radius-sm);
+}
+
+.game-score { color: var(--bl-lime); }
+
+.disclaimer { color: var(--bl-muted); border-left-color: var(--bl-magenta); }
+
+.metric-grid dt { color: var(--bl-muted); }
+.metric-grid dd { color: var(--bl-text); }
