@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Gauge,
+  RefreshCw,
   Route,
   Sparkles,
   Trophy,
@@ -122,6 +123,16 @@ const HomePage = () => {
           <div className="mx-auto mb-6 flex max-w-2xl items-center gap-3 rounded-lg border-[3px] border-ink-900 bg-punch px-4 py-3 shadow-soft">
             <AlertTriangle className="h-5 w-5 shrink-0 text-cream" />
             <p className="text-sm font-bold text-cream">{error}</p>
+            {/* The recording is still in memory, so a failed upload can be sent
+                again without making the participant walk the lane a second time. */}
+            {file && file.size > 0 && (
+              <button
+                onClick={() => handleFileUpload(file)}
+                className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border-[3px] border-ink-900 bg-zap px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-ink-900 shadow-soft transition-transform duration-200 hover:-translate-y-0.5"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Send again
+              </button>
+            )}
           </div>
         )}
 

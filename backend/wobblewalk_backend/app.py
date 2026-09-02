@@ -1,6 +1,7 @@
 """FastAPI service for WobbleWalk video scoring."""
 from __future__ import annotations
 
+import importlib
 import os
 import tempfile
 import time
@@ -27,7 +28,30 @@ app.add_middleware(
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "service": "wobblewalk"}
+    """Report whether the analyzer's heavy dependencies are actually importable.
+
+    video_tracking.py imports cv2/mediapipe lazily inside the analysis call, so
+    the service starts happily on an interpreter that cannot run a single
+    analysis. Before this probe existed, an operator checking /health saw
+    "ok" and only discovered the missing wheels when the first participant's
+    upload came back as a 500. The probe is read-only and does not change what
+    /api/analyze does.
+    """
+    analyzer = {}
+    for module_name in ("cv2", "mediapipe", "numpy"):
+        try:
+            module = importlib.import_module(module_name)
+            analyzer[module_name] = getattr(module, "__version__", "unknown")
+        except Exception as exc:  # ImportError, or a broken binary wheel
+            analyzer[module_name] = f"MISSING ({exc.__class__.__name__})"
+
+    ready = all(not str(value).startswith("MISSING") for value in analyzer.values())
+    return {
+        "status": "ok" if ready else "degraded",
+        "service": "wobblewalk",
+        "analyzer_ready": ready,
+        "analyzer": analyzer,
+    }
 
 
 @app.post("/api/analyze")

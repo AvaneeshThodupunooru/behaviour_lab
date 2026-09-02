@@ -148,6 +148,30 @@ app.mount("/wobblewalk-api", wobblewalk_app)
 # Static files: event shell, shared event-client.js, and all four games.
 # Mounted last so it doesn't shadow the /api/* and /wobblewalk-api routes.
 # ---------------------------------------------------------------------------
+
+
+@app.middleware("http")
+async def revalidate_station_code(request, call_next):
+    """Force the browser to revalidate station HTML/JS/CSS on every load.
+
+    StaticFiles sends only ETag/Last-Modified, so with no Cache-Control the
+    browser is free to serve station code from its heuristic cache without
+    asking. During setup that means an edit made minutes earlier silently does
+    not reach the station. ETags still answer 304 for unchanged files, so this
+    costs one conditional request per asset. Images, video and the hashed Vite
+    bundles keep their normal caching.
+    """
+    response = await call_next(request)
+    path = request.url.path
+    # Directory URLs ("/", "/leaderboard/", "/games/<station>/") are the
+    # html=True index pages. They carry no file suffix, so match the trailing
+    # slash as well or the station pages themselves stay heuristically cached.
+    if path.endswith((".html", ".js", ".css", "/")):
+        if "/assets/" not in path:  # Vite output is content-hashed already
+            response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 app.mount("/static/shared", StaticFiles(directory=str(STATIC_DIR / "shared")), name="shared")
 app.mount("/games/timer", StaticFiles(directory=str(STATIC_DIR / "games" / "timer"), html=True), name="timer")
 app.mount("/games/gaze", StaticFiles(directory=str(STATIC_DIR / "games" / "gaze"), html=True), name="gaze")

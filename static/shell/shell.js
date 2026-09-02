@@ -262,13 +262,28 @@
   // ---------------------------------------------------------------------
   var GAME_ORDER_FOR_REPORT = ['gaze', 'timer', 'deadpan', 'wobblewalk'];
 
+  // Several report cards pass raw summary keys straight through as labels
+  // (meanReactionTimeMs, pathEfficiencyPct, ...). The CSS uppercases every
+  // label, which turned those into unreadable runs like MEANREACTIONTIMEMS on
+  // the participant's report. Split the camel-case boundaries and expand the
+  // two unit suffixes the summarizers use. Labels that are already written as
+  // words ('Images Viewed') pass through untouched.
+  function prettyLabel(key) {
+    return String(key)
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/\bMs\b/g, '(ms)')
+      .replace(/\bPct\b/g, '(%)')
+      .replace(/\bSeconds\b/g, '(s)')
+      .replace(/^./, function (c) { return c.toUpperCase(); });
+  }
+
   function renderMetricGrid(entries) {
     var dl = document.createElement('dl');
     dl.className = 'metric-grid';
     entries.forEach(function (pair) {
       if (pair[1] === undefined || pair[1] === null) return;
       var dt = document.createElement('dt');
-      dt.textContent = pair[0];
+      dt.textContent = prettyLabel(pair[0]);
       var dd = document.createElement('dd');
       dd.textContent = pair[1];
       dl.appendChild(dt);
@@ -453,8 +468,11 @@
         var imagesData = (gazeResultDoc && gazeResultDoc.images) || [];
 
         // Metric grid for basic gaze info
+        // The merged station shows exactly two posters (merged-main.js slices
+        // the detected set to 2), so read the count the station actually
+        // reported rather than restating it as a literal.
         var gazeEntries = [
-          ['Images Viewed', '2 (Active Experiment)'],
+          ['Images Viewed', summary.imagesViewed || imagesData.length || '—'],
           ['Recall Accuracy', summary.recallScore || '—'],
           ['Gaze Samples Captured', summary.gazeSamplesCollected || '0']
         ];
@@ -503,7 +521,9 @@
 
             var qText = document.createElement('div');
             qText.className = 'recall-q-text';
-            qText.textContent = (idx + 1) + '. (Image ' + q.imageId + ') ' + (q.questionText || 'Recall Question');
+            qText.textContent = (idx + 1) + '. '
+              + (q.imageId ? '(Image ' + q.imageId + ') ' : '')
+              + (q.questionText || q.prompt || 'Recall Question');
             li.appendChild(qText);
 
             var qAns = document.createElement('div');

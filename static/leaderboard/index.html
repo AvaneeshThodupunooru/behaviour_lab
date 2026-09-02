@@ -103,7 +103,7 @@
           overall.textContent = score(entry.overall_score) + ' / 100';
           var breakdown = document.createElement('td');
           breakdown.className = 'breakdown';
-          breakdown.textContent = 'Timer ' + score(scores.timer) + ' · Gaze ' + score(scores.gaze) + ' · Walk ' + score(scores.wobblewalk) + ' · DEADPAN ' + score(scores.deadpan);
+          breakdown.textContent = 'Timer ' + score(scores.timer) + ' · Gaze ' + score(scores.gaze) + ' · Walk ' + score(scores.wobblewalk) + ' · Deadpan ' + score(scores.deadpan);
           row.append(rank, name, overall, breakdown);
           body.appendChild(row);
         });
