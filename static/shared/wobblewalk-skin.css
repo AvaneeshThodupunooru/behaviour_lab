@@ -1,0 +1,88 @@
+/* =====================================================================
+   wobblewalk-skin.css — skin pass over WobbleWalk's built Tailwind bundle.
+
+   WobbleWalk is a React/Vite app whose CSS ships as a hashed, minified
+   bundle (games/wobblewalk/assets/index-*.css) built for a LIGHT theme:
+   white cards, near-black ink text, a blue "brand" ramp. Re-theming it
+   properly would mean editing tailwind.config + rebuilding, so instead
+   this file re-paints the handful of utility/component classes that
+   bundle actually emits, using the shared --bl-* palette from theme.css.
+
+   Load order in games/wobblewalk/index.html must be:
+     built bundle CSS  ->  /static/shared/theme.css  ->  this file
+
+   Rules here set COLOUR-ish properties only (background, colour, border
+   colour, shadow, font-family). Nothing sets display/position/size/
+   spacing/flex/grid, so the React component tree renders at exactly the
+   same geometry as before. Every selector below was verified to exist in
+   the shipped bundle before being listed.
+   ===================================================================== */
+
+/* ---- page shell ---------------------------------------------------- */
+
+#root { color: var(--bl-text); }
+
+/* ---- the two card primitives --------------------------------------- */
+
+.surface,
+.glow-card {
+  background-color: var(--bl-surface) !important;
+  background-image: var(--bl-grad-soft);
+  border-color: var(--bl-line-soft) !important;
+  color: var(--bl-text);
+  box-shadow: var(--bl-shadow);
+}
+
+/* ---- kicker / gradient headline / pill ----------------------------- */
+
+.eyebrow {
+  color: var(--bl-magenta) !important;
+  font-family: var(--bl-font-mono);
+}
+
+.gradient-text {
+  background-image: var(--bl-grad) !important;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.chip {
+  background-color: rgba(34, 224, 255, 0.12) !important;
+  border-color: rgba(34, 224, 255, 0.34) !important;
+  color: var(--bl-cyan) !important;
+  font-family: var(--bl-font-mono);
+}
+
+.marquee { color: var(--bl-text-dim); }
+
+/* ---- Tailwind colour utilities the bundle emits --------------------
+   These are the literal class names present in the built CSS. Only the
+   colour they paint changes; the utility keeps its own specificity, so
+   !important is needed to win against the bundle's own declarations. */
+
+.bg-white { background-color: var(--bl-surface) !important; }
+.bg-ink-900 { background-color: var(--bl-bg) !important; }
+
+.bg-brand-50 { background-color: rgba(255, 45, 132, 0.12) !important; }
+.bg-brand-500 { background-color: var(--bl-magenta) !important; }
+.bg-brand-600 { background-color: var(--bl-magenta) !important; }
+
+.border-brand-400 { border-color: var(--bl-magenta) !important; }
+.border-ink-900 { border-color: var(--bl-line) !important; }
+
+.text-white { color: var(--bl-text) !important; }
+.text-brand-600 { color: var(--bl-cyan) !important; }
+
+/* The ink ramp went dark-on-light; it inverts to light-on-dark here,
+   keeping the same relative emphasis (900 strongest, 300 faintest). */
+.text-ink-900 { color: var(--bl-text) !important; }
+.text-ink-800 { color: var(--bl-text) !important; }
+.text-ink-700 { color: var(--bl-text-dim) !important; }
+.text-ink-500 { color: var(--bl-muted) !important; }
+.text-ink-400 { color: var(--bl-muted) !important; }
+.text-ink-300 { color: var(--bl-muted) !important; }
+
+/* ---- typography ---------------------------------------------------- */
+
+h1, h2, h3 { font-family: var(--bl-font-display); }

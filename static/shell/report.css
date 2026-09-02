@@ -1,0 +1,198 @@
+/* ---------------------------------------------------------------------------
+   THE THING - final report
+   ---------------------------------------------------------------------------
+   Loaded after shell.css. Every selector here is emitted only by the report
+   renderer in shell.js, so this file and the shell stylesheet never describe
+   the same element twice — a reskin of one cannot break the other.
+
+   Report cards sit on the cream .card surface, so ink is var(--void-950) and
+   anything softer is that same ink at low alpha. The hero and its tail sit on
+   .report-hero's void purple, so those go the other way, cream at low alpha.
+   Presentation only: no score, metric or verdict text is decided here.
+   --------------------------------------------------------------------------- */
+
+/* --- hero tail ------------------------------------------------------------ */
+
+.report-tier-note {
+  margin: 12px 0 0;
+  max-width: 52ch;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: rgba(255, 244, 228, 0.72);
+}
+
+/* --- the verdict band ----------------------------------------------------- */
+
+.roast-band {
+  margin: 0 0 18px;
+  padding: 18px 22px;
+  border: 3px solid var(--void-950);
+  border-radius: 20px;
+  background: var(--zap);
+  color: var(--void-950);
+  box-shadow: var(--hard-sm);
+  transform: rotate(-0.6deg);
+}
+
+.roast-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(18, 11, 38, 0.6);
+}
+
+.roast-quote {
+  margin: 9px 0 0;
+  max-width: 46ch;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.24;
+}
+
+/* --- station cards -------------------------------------------------------- */
+
+.report-card-sub {
+  margin: -6px 0 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(18, 11, 38, 0.5);
+}
+
+.station-verdict {
+  margin: 0 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--void-950);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.station-callouts {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  border-top: 2px solid rgba(18, 11, 38, 0.12);
+}
+.station-callouts li {
+  position: relative;
+  padding: 10px 0 10px 19px;
+  border-bottom: 2px solid rgba(18, 11, 38, 0.12);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.station-callouts li:last-child { border-bottom: none; padding-bottom: 2px; }
+.station-callouts li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: rgba(18, 11, 38, 0.45);
+}
+
+/* --- figure furniture ----------------------------------------------------- */
+
+.route-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+.route-head h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.route-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(18, 11, 38, 0.55);
+}
+.route-legend span { display: flex; align-items: center; gap: 5px; }
+.route-legend i { display: block; width: 16px; height: 3px; background: #ff8268; }
+.route-legend i.ideal {
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--void-950) 0 4px, transparent 4px 7px);
+}
+
+/* The ramp is the heatmap's own thermal palette, mirrored from the stop table
+   in report-visuals.js. Change one and the other stops telling the truth. */
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(18, 11, 38, 0.55);
+}
+.heat-ramp {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  border: 2px solid var(--void-950);
+  background: linear-gradient(90deg,
+    #0a1046 0%, #1a3ac8 14%, #00bacd 32%, #28d25a 52%,
+    #ffdc3c 70%, #ff8218 86%, #f02820 100%);
+}
+
+.canvas-note {
+  margin: 9px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+  color: rgba(18, 11, 38, 0.55);
+}
+
+/* --- "also used in autism research" block ---------------------------------- */
+
+.research-block {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 3px solid var(--void-950);
+  border-left-width: 7px;
+  border-radius: 16px;
+  background: rgba(183, 156, 255, 0.16);
+}
+.research-head {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(18, 11, 38, 0.6);
+}
+.research-intro {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--void-950);
+}
+.research-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: rgba(18, 11, 38, 0.72);
+}
+.research-list li { margin-top: 6px; }
+.research-list li:first-child { margin-top: 0; }
+
+@media (max-width: 560px) {
+  .roast-band { transform: none; padding: 15px 17px; }
+  .roast-quote { font-size: 17px; }
+  .route-head { flex-direction: column; gap: 4px; }
+}

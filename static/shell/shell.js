@@ -262,13 +262,28 @@
   // ---------------------------------------------------------------------
   var GAME_ORDER_FOR_REPORT = ['gaze', 'timer', 'deadpan', 'wobblewalk'];
 
+  // Several report cards pass raw summary keys straight through as labels
+  // (meanReactionTimeMs, pathEfficiencyPct, ...). The CSS uppercases every
+  // label, which turned those into unreadable runs like MEANREACTIONTIMEMS on
+  // the participant's report. Split the camel-case boundaries and expand the
+  // two unit suffixes the summarizers use. Labels that are already written as
+  // words ('Images Viewed') pass through untouched.
+  function prettyLabel(key) {
+    return String(key)
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/\bMs\b/g, '(ms)')
+      .replace(/\bPct\b/g, '(%)')
+      .replace(/\bSeconds\b/g, '(s)')
+      .replace(/^./, function (c) { return c.toUpperCase(); });
+  }
+
   function renderMetricGrid(entries) {
     var dl = document.createElement('dl');
     dl.className = 'metric-grid';
     entries.forEach(function (pair) {
       if (pair[1] === undefined || pair[1] === null) return;
       var dt = document.createElement('dt');
-      dt.textContent = pair[0];
+      dt.textContent = prettyLabel(pair[0]);
       var dd = document.createElement('dd');
       dd.textContent = pair[1];
       dl.appendChild(dt);
@@ -327,6 +342,8 @@
     hero.className = 'report-hero';
     var heroTitle = document.createElement('div');
     heroTitle.className = 'report-hero-title';
+    // The <h2> above already says "Your THE THING report", so the kicker slot
+    // carries the tier instead of repeating the branding.
     heroTitle.textContent = tier.label;
     hero.appendChild(heroTitle);
     var vibe = document.createElement('div');
@@ -433,7 +450,16 @@
         var imagesData = (gazeResultDoc && gazeResultDoc.images) || [];
 
         // Metric grid for basic gaze info
-        card.appendChild(renderMetricGrid(window.ReportRoast.stationMetrics('gaze', summary)));
+        // Labels and rounding come from report-roast.js. imagesViewed is absent
+        // on sessions recorded before the station reported it, and the posters
+        // are right underneath, so count those rather than drop the row.
+        var gazeSummary = summary;
+        if (summary && summary.imagesViewed === undefined && imagesData.length) {
+          gazeSummary = {};
+          Object.keys(summary).forEach(function (k) { gazeSummary[k] = summary[k]; });
+          gazeSummary.imagesViewed = imagesData.length;
+        }
+        card.appendChild(renderMetricGrid(window.ReportRoast.stationMetrics('gaze', gazeSummary)));
 
         // EXACTLY TWO gaze images with gaze paths
         var imgGrid = document.createElement('div');
@@ -490,7 +516,9 @@
 
             var qText = document.createElement('div');
             qText.className = 'recall-q-text';
-            qText.textContent = (idx + 1) + '. (Image ' + q.imageId + ') ' + (q.questionText || 'Recall Question');
+            qText.textContent = (idx + 1) + '. '
+              + (q.imageId ? '(Image ' + q.imageId + ') ' : '')
+              + (q.questionText || q.prompt || 'Recall Question');
             li.appendChild(qText);
 
             var qAns = document.createElement('div');

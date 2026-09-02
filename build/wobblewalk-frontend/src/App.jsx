@@ -6,7 +6,9 @@ import ReportPage from './pages/ReportPage';
 
 function App() {
   return (
-    <BrowserRouter>
+    // The app is served from a sub-path (see `base` in vite.config.js), so the
+    // router needs the same prefix or none of the routes match.
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />
