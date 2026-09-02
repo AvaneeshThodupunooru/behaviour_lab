@@ -33,3 +33,17 @@ async function detectImages() {
   }
   return images;
 }
+
+// Loads a specific, explicit list of image numbers (e.g. the 4 numbers
+// assigned to one age/gender category) instead of auto-scanning from 1.
+// Numbers that don't resolve to a file (any supported extension) are
+// skipped rather than stopping the scan, since gaps are expected once
+// images are split across categories.
+async function loadImagesByNumbers(numbers) {
+  const images = [];
+  for (const n of numbers) {
+    const found = await findImageForNumber(n);
+    if (found) images.push(found);
+  }
+  return images;
+}

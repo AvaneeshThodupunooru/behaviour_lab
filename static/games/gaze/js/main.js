@@ -3,16 +3,79 @@ function showScreen(id) {
   document.getElementById(id).style.display = 'block';
 }
 
+// Age/gender category (CATEGORY_IMAGE_NUMBERS, resolveCategory,
+// pickRandomNumbers, loadImagesForCategory) comes from js/categories.js,
+// shared with gaze-timer.
+
+var participantAge = null;
+var participantGender = null;
+var participantCategory = null;
+
+function initDetailsScreen() {
+  const eventParams = (typeof EventClient !== 'undefined') ? EventClient.getParams() : { age: '', gender: '', category: '' };
+
+  // If the shell already resolved a category (normal flow: age/gender were
+  // collected on the participant-info step), skip straight to setup —
+  // don't ask a second time.
+  if (eventParams.category && CATEGORY_IMAGE_NUMBERS[eventParams.category]) {
+    participantAge = eventParams.age ? parseInt(eventParams.age, 10) : null;
+    participantGender = eventParams.gender || null;
+    participantCategory = eventParams.category;
+    showScreen('setupScreen');
+    initSetupScreen();
+    return;
+  }
+
+  // Fallback for opening this page directly (standalone testing, no shell
+  // params on the URL): ask on-page.
+  const ageInput = document.getElementById('ageInput');
+  const genderInput = document.getElementById('genderInput');
+  const errorEl = document.getElementById('detailsError');
+  const continueBtn = document.getElementById('detailsContinueBtn');
+
+  continueBtn.addEventListener('click', () => {
+    const age = parseInt(ageInput.value, 10);
+    const gender = genderInput.value;
+
+    if (!Number.isFinite(age) || age <= 0) {
+      errorEl.textContent = 'Please enter a valid age.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (gender !== 'male' && gender !== 'female') {
+      errorEl.textContent = 'Please select a gender.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    participantAge = age;
+    participantGender = gender;
+    participantCategory = resolveCategory(age, gender);
+
+    if (!CATEGORY_IMAGE_NUMBERS[participantCategory]) {
+      errorEl.textContent = 'Could not resolve an image category — contact the experimenter.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    errorEl.style.display = 'none';
+    showScreen('setupScreen');
+    initSetupScreen();
+  });
+}
+
 async function initSetupScreen() {
   const statusEl = document.getElementById('setupStatus');
   const listEl = document.getElementById('imageList');
   const startBtn = document.getElementById('startExperimentBtn');
 
-  statusEl.textContent = 'Scanning images/ folder...';
-  const images = await detectImages();
+  statusEl.textContent = 'Loading images for this category...';
+  // Tolerant of a category not having its full 4-image set on disk yet —
+  // tops itself up from whatever images do exist. See categories.js.
+  const images = await loadImagesForCategory(participantCategory, 2);
 
   if (images.length === 0) {
-    statusEl.textContent = 'No images found. Add 1.jpg, 2.png, etc. to the images/ folder, then reload this page.';
+    statusEl.textContent = 'No images found for this category. Add the numbered image files to Images/, then reload this page.';
     return;
   }
 
@@ -95,7 +158,11 @@ var lastEventImages = null;
 function buildEventResult(images) {
   return {
     imageCount: images.length,
-    sampleCount: DataStore.getAllSamples().length
+    sampleCount: DataStore.getAllSamples().length,
+    questionResults: Experiment.getQuestionResults(),
+    category: participantCategory,
+    age: participantAge,
+    gender: participantGender
   };
 }
 
@@ -134,4 +201,4 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
-document.addEventListener('DOMContentLoaded', initSetupScreen);
+document.addEventListener('DOMContentLoaded', initDetailsScreen);

@@ -9,8 +9,39 @@
 
   var state = {
     sessionId: null,
-    sessionDoc: null
+    sessionDoc: null,
+    age: null,
+    gender: null,
+    category: null
   };
+
+  // Same bracket rule as static/games/gaze/js/categories.js (age >= 25 ->
+  // "above25"). Kept as a one-line duplicate here rather than a shared
+  // include, since the shell and the gaze pages are separate static
+  // mounts — this is the only bit of category logic the shell needs.
+  function resolveCategory(age, gender) {
+    var bracket = age >= 25 ? 'above25' : 'below25';
+    return bracket + '-' + gender;
+  }
+
+  function detailsStorageKey(sessionId) {
+    return 'behaviorLabDetails::' + sessionId;
+  }
+
+  function saveDetailsForSession(sessionId, age, gender, category) {
+    try {
+      sessionStorage.setItem(detailsStorageKey(sessionId), JSON.stringify({ age: age, gender: gender, category: category }));
+    } catch (err) { /* sessionStorage unavailable — details just won't survive a refresh */ }
+  }
+
+  function restoreDetailsForSession(sessionId) {
+    try {
+      var raw = sessionStorage.getItem(detailsStorageKey(sessionId));
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
 
   var el = {
     backendStatus: document.getElementById('backendStatus'),
@@ -24,6 +55,8 @@
     participantForm: document.getElementById('participantForm'),
     participantId: document.getElementById('participantId'),
     participantName: document.getElementById('participantName'),
+    participantAge: document.getElementById('participantAge'),
+    participantGender: document.getElementById('participantGender'),
     participantError: document.getElementById('participantError'),
     btnBackToWelcome: document.getElementById('btnBackToWelcome'),
     btnCreateSession: document.getElementById('btnCreateSession'),
@@ -84,9 +117,14 @@
   function goToParticipantForm() {
     state.sessionId = null;
     state.sessionDoc = null;
+    state.age = null;
+    state.gender = null;
+    state.category = null;
     setSessionIdInUrl('');
     el.participantId.value = '';
     el.participantName.value = '';
+    el.participantAge.value = '';
+    el.participantGender.value = '';
     el.participantError.hidden = true;
     showScreen('participant');
   }
@@ -104,6 +142,18 @@
       el.participantError.hidden = false;
       return;
     }
+    var age = parseInt(el.participantAge.value, 10);
+    if (!Number.isFinite(age) || age <= 0) {
+      el.participantError.textContent = 'Please enter a valid age.';
+      el.participantError.hidden = false;
+      return;
+    }
+    var gender = el.participantGender.value;
+    if (gender !== 'male' && gender !== 'female') {
+      el.participantError.textContent = 'Please select a gender.';
+      el.participantError.hidden = false;
+      return;
+    }
     el.btnCreateSession.disabled = true;
     el.participantError.hidden = true;
     try {
@@ -115,6 +165,10 @@
       var data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Could not create a session.');
       state.sessionId = data.session_id;
+      state.age = age;
+      state.gender = gender;
+      state.category = resolveCategory(age, gender);
+      saveDetailsForSession(state.sessionId, age, gender, state.category);
       setSessionIdInUrl(state.sessionId);
       await loadSessionAndShowChecklist(state.sessionId);
     } catch (err) {
@@ -196,8 +250,12 @@
   }
 
   function gameUrl(game) {
-    return game.path + '?session_id=' + encodeURIComponent(state.sessionId) +
+    var url = game.path + '?session_id=' + encodeURIComponent(state.sessionId) +
       '&return_url=' + encodeURIComponent('/');
+    if (state.age !== null) url += '&age=' + encodeURIComponent(state.age);
+    if (state.gender) url += '&gender=' + encodeURIComponent(state.gender);
+    if (state.category) url += '&category=' + encodeURIComponent(state.category);
+    return url;
   }
 
   function navigateToGame(game) {
@@ -234,6 +292,14 @@
       var doc = await fetchSession(sessionId);
       state.sessionId = sessionId;
       state.sessionDoc = doc;
+      if (state.age === null) {
+        var restored = restoreDetailsForSession(sessionId);
+        if (restored) {
+          state.age = restored.age;
+          state.gender = restored.gender;
+          state.category = restored.category;
+        }
+      }
       renderChecklist(doc);
     } catch (err) {
       setSessionIdInUrl('');
@@ -468,9 +534,9 @@
         var imagesData = (gazeResultDoc && gazeResultDoc.images) || [];
 
         // Metric grid for basic gaze info
-        // The merged station shows exactly two posters (merged-main.js slices
-        // the detected set to 2), so read the count the station actually
-        // reported rather than restating it as a literal.
+        // Image count varies by participant category (and by how many
+        // files actually exist per category), so read the count the
+        // station actually reported rather than assuming a fixed number.
         var gazeEntries = [
           ['Images Viewed', summary.imagesViewed || imagesData.length || '—'],
           ['Recall Accuracy', summary.recallScore || '—'],
@@ -478,15 +544,17 @@
         ];
         card.appendChild(renderMetricGrid(gazeEntries));
 
-        // EXACTLY TWO gaze images with gaze paths
+        // Gaze-path overlay for whichever images this participant's
+        // category actually showed (varies by category — do not assume
+        // ids 1/2, and use each image's own stored url/extension).
         var imgGrid = document.createElement('div');
         imgGrid.className = 'gaze-images-grid';
 
-        [1, 2].forEach(function (imgId) {
+        imagesData.forEach(function (imgInfo) {
           var imgCard = document.createElement('div');
           imgCard.className = 'gaze-image-card';
           var imgTitle = document.createElement('h4');
-          imgTitle.textContent = 'Image ' + imgId + ' — Gaze Path';
+          imgTitle.textContent = 'Image ' + imgInfo.id + ' — Gaze Path';
           imgCard.appendChild(imgTitle);
 
           var canvasWrap = document.createElement('div');
@@ -495,9 +563,8 @@
           canvasWrap.appendChild(canvas);
           imgCard.appendChild(canvasWrap);
 
-          var imgInfo = imagesData.find(function (im) { return im.id === imgId; });
-          var samples = imgInfo ? (imgInfo.samples || []) : [];
-          var imgUrl = '/games/gaze-timer/Images/' + imgId + '.png';
+          var samples = imgInfo.samples || [];
+          var imgUrl = '/games/gaze-timer/' + imgInfo.url;
           renderGazeImageOverlay(canvas, imgUrl, samples);
 
           imgGrid.appendChild(imgCard);

@@ -30,7 +30,10 @@
     return {
       sessionId: params.get('session_id') || '',
       apiBase: (params.get('api_base') || '').replace(/\/$/, ''),
-      returnUrl: params.get('return_url') || '/'
+      returnUrl: params.get('return_url') || '/',
+      age: params.get('age') || '',
+      gender: params.get('gender') || '',
+      category: params.get('category') || ''
     };
   }
 
