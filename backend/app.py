@@ -16,6 +16,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -33,6 +34,12 @@ BACKUP_PATH = BASE_DIR / "data" / "sessions_backup.json"
 load_dotenv(BASE_DIR / ".env")
 
 app = FastAPI(title="Behavior Lab Event Backend", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["null"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"]
+)
 
 store, using_mongo, store_note = build_store()
 if not using_mongo:

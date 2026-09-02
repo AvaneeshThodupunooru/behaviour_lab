@@ -1,5 +1,12 @@
-// Base URL comes from .env (VITE_API_URL); falls back to local dev.
-const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
+// Use the mounted API when this build is served by the event backend. An
+// absolute URL remains supported for standalone local development, but a
+// Windows filesystem path must never become a fetch target.
+const configuredApiUrl = (import.meta.env.VITE_API_URL || '').trim();
+const API_URL = configuredApiUrl && !/^[A-Za-z]:[\\/]/.test(configuredApiUrl)
+  ? configuredApiUrl.replace(/\/$/, '')
+  : (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+    ? '/wobblewalk-api'
+    : 'http://127.0.0.1:8000/wobblewalk-api';
 
 export const analyzeRound = async (file, spinCount = 3) => {
   const formData = new FormData();
