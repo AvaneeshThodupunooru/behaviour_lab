@@ -126,6 +126,32 @@ const Metric = ({ icon, value, label }) => (
 );
 
 const ReportPage = () => {
+  return (
+    <div className="ww-thanks-page" aria-live="polite">
+      <style>{`
+        .ww-thanks-page{min-height:calc(100vh - 128px);display:grid;place-items:center;padding:32px 20px;font-family:'Space Grotesk',system-ui,sans-serif}
+        .ww-thanks-card{position:relative;isolation:isolate;overflow:hidden;width:min(680px,100%);padding:52px 40px;text-align:center;background:#fff4e4;color:#120b26;border:3px solid #120b26;border-radius:2rem;box-shadow:8px 8px 0 #120b26}
+        .ww-thanks-card:before,.ww-thanks-card:after{content:'';position:absolute;z-index:-1;border:3px solid #120b26;border-radius:999px;opacity:.7}
+        .ww-thanks-card:before{width:170px;height:170px;right:-64px;top:-76px;background:#3fe0a0;animation:ww-thanks-float 5s ease-in-out infinite}
+        .ww-thanks-card:after{width:112px;height:112px;left:-42px;bottom:-54px;background:#ffd23f;animation:ww-thanks-float 5s ease-in-out .8s infinite reverse}
+        .ww-thanks-icon{width:72px;height:72px;display:grid;place-items:center;margin:0 auto 22px;border:3px solid #120b26;border-radius:18px;background:#ff4d8d;color:#fff4e4;box-shadow:5px 5px 0 #120b26;animation:ww-thanks-pop .55s cubic-bezier(.22,1,.36,1) both}
+        .ww-thanks-kicker{margin:0 0 13px;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+        .ww-thanks-title{max-width:14ch;margin:0 auto;font-family:'Baloo 2','Trebuchet MS',sans-serif;font-size:clamp(36px,6vw,58px);font-weight:800;line-height:.98;letter-spacing:-.03em}
+        .ww-thanks-copy{max-width:46ch;margin:22px auto 0;color:#5b4a7d;font-size:17px;line-height:1.58}
+        .ww-thanks-next{display:inline-flex;align-items:center;gap:9px;margin-top:28px;padding:9px 15px;border:3px solid #120b26;border-radius:999px;background:#b79cff;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;box-shadow:4px 4px 0 #120b26}
+        @keyframes ww-thanks-pop{from{opacity:0;transform:scale(.7) rotate(-12deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+        @keyframes ww-thanks-float{50%{transform:translateY(12px) rotate(8deg)}}
+      `}</style>
+      <section className="ww-thanks-card">
+        <div className="ww-thanks-icon"><Sparkles size={34} aria-hidden="true" /></div>
+        <p className="ww-thanks-kicker">All games complete</p>
+        <h1 className="ww-thanks-title">Thank you for spending time and playing games with us.</h1>
+        <p className="ww-thanks-copy">You can collect your report and check your score on the leaderboard at the next station.</p>
+        <div className="ww-thanks-next"><Footprints size={16} aria-hidden="true" /> Head to the next station</div>
+      </section>
+    </div>
+  );
+
   const location = useLocation();
   const navigate = useNavigate();
   const isSample = new URLSearchParams(location.search).get('sample') === '1';

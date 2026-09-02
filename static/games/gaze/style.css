@@ -12,6 +12,39 @@ html, body {
   padding: 0;
 }
 
+.tt-home-link {
+  position: fixed;
+  top: 16px;
+  left: 24px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--cream);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  cursor: pointer;
+  transition: color .2s ease;
+}
+.tt-home-link:hover,
+.tt-home-link:focus-visible { color: var(--zap); }
+.tt-home-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 3px solid var(--void-950);
+  border-radius: 50%;
+  background: var(--zap);
+  color: var(--void-950);
+  box-shadow: var(--hard-sm);
+}
+.tt-home-mark svg { width: 20px; height: 20px; }
+
 button {
   padding: 10px 20px;
   font-size: 1em;

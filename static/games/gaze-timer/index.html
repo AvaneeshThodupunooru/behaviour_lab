@@ -19,15 +19,19 @@
   </style>
 </head>
 <body>
+  <a class="tt-home-link" href="/" aria-label="Back to welcome screen">
+    <span class="tt-home-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6Z"/></svg></span>
+    THE THING
+  </a>
   <!-- One GazeCloud-owned calibration, shared by both phases. -->
   <section id="merged-calibration-screen">
     <span class="tt-blob tt-blob--a" aria-hidden="true"></span>
     <span class="tt-blob tt-blob--b" aria-hidden="true"></span>
     <div class="panel">
-      <p class="eyebrow">THE THING</p>
       <h1>Eye tracking setup</h1>
       <p id="merged-calibration-status" class="body-text body-text--muted">Allow camera access, then complete the calibration shown by the eye tracker.</p>
       <button id="merged-start" class="btn btn--primary" type="button">Start calibration</button>
+      <button id="merged-skip-calibration" class="btn btn--ghost" type="button">Skip calibration</button>
     </div>
   </section>
 
@@ -70,7 +74,7 @@
   <script src="../gaze/js/experiment.js"></script>
   <script src="../gaze/js/categories.js"></script>
   <script>
-    window.PressureClockHostOptions = { skipCalibration: true, autoStart: true, durationSec: 35 };
+    window.PressureClockHostOptions = { skipCalibration: true, autoStart: true, durationSec: 35, skipReveal: true };
   </script>
   <script src="../timer/js/roi.js"></script>
   <script src="../timer/js/metrics.js"></script>

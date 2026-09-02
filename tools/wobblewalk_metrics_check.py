@@ -135,8 +135,8 @@ missing = [field for field in (
 check("report summary exposes every field the shell renders", not missing, f"missing/None: {missing}")
 check("a steady walk earns close to the full 25 points", summary["score"] > 23.5, str(summary["score"]))
 degraded = summarize_wobblewalk(too_short)
-check("a refused walk still renders a reason and a zero score",
-      degraded.get("available") is False and degraded.get("score") == 0.0 and bool(degraded.get("reason")),
+check("a refused walk renders a reason without a behavioral score",
+      degraded.get("available") is False and degraded.get("score") is None and bool(degraded.get("reason")),
       str(degraded))
 
 print()

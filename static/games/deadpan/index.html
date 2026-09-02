@@ -79,6 +79,17 @@
     background:var(--calm); border:3px solid var(--void-950); border-radius:999px;
     padding:6px 16px; box-shadow:var(--hard-sm);
   }
+  .tt-home-link{
+    position:fixed; top:16px; left:24px; z-index:40;
+    display:inline-flex; align-items:center; gap:10px;
+    color:var(--cream); text-decoration:none;
+    font-family:var(--font-display); font-size:18px; font-weight:800;
+    letter-spacing:.14em; cursor:pointer;
+    transition:color .2s ease;
+  }
+  .tt-home-link:hover,.tt-home-link:focus-visible{ color:var(--zap); }
+  .tt-home-mark{ display:grid; place-items:center; width:36px; height:36px; flex:none; border:3px solid var(--void-950); border-radius:50%; background:var(--zap); color:var(--void-950); box-shadow:var(--hard-sm); }
+  .tt-home-mark svg{ width:20px; height:20px; }
   .pre-cam h1{
     font-family:var(--font-display); font-size:clamp(46px,11vw,86px); font-weight:800;
     margin:10px 0 4px; letter-spacing:-0.01em; color:var(--zap,#ffd23f);
@@ -251,6 +262,7 @@
   .stim-overlay.show{ opacity:1; pointer-events:auto; }
   .stim-overlay-inner{ max-width:80vw; max-height:80vh; text-align:center; }
   .stim-overlay-inner img, .stim-overlay-inner video{ max-width:80vw; max-height:70vh; border:3px solid var(--void-950); border-radius:20px; box-shadow:var(--hard); }
+  .stim-overlay-inner video{ width:min(80vw, calc(70vh * 16 / 9)); height:auto; }
   .stim-overlay-inner .txt-stim{ font-family:var(--font-display); font-weight:800; font-size:clamp(22px,4.4vw,44px); line-height:1.28; color:var(--cream); max-width:700px; text-shadow:0 5px 0 rgba(18,11,38,.55); }
   .stim-close{
     position:fixed; top:22px; right:22px; z-index:39; width:44px; height:44px; border-radius:50%;
@@ -273,6 +285,11 @@
 </head>
 <body>
 
+<a class="tt-home-link" href="/" aria-label="Back to welcome screen">
+  <span class="tt-home-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6Z"/></svg></span>
+  THE THING
+</a>
+
 <div id="stage">
   <video id="video" autoplay playsinline muted></video>
 </div>
@@ -281,7 +298,6 @@
 
 <!-- Pre-camera splash -->
 <div class="pre-cam" id="preCam">
-  <div class="eyebrow">THE THING</div>
   <h1>DEADPAN</h1>
   <p>Try not to laugh. Your webcam watches for smile, jaw-drop, cheek and eye-squint signals and fuses them into one live laugh score — cross the line, it counts.</p>
   <button class="btn primary" id="startCamBtn">Enable Camera & Start</button>
@@ -326,7 +342,6 @@
   <div class="row" style="margin-top:10px;">
     <button class="btn" id="retrySubmitBtn" style="display:none;">Retry sending to event server</button>
     <a class="btn" id="returnEventBtn" href="/" style="display:none;">Return to event</a>
-    <button class="btn primary" id="summaryCloseBtn">Back to stage</button>
   </div>
 </div>
 
@@ -334,14 +349,7 @@
 <div class="modal-backdrop hidden" id="introModal">
   <div class="modal">
     <span class="eyebrow">HOW TO PLAY</span>
-    <h2>Keep a straight face</h2>
-    <ol>
-      <li><b>Enable your camera.</b> Everything runs locally in your browser — video never leaves your device.</li>
-      <li><b>Press Start Session</b> in the controls drawer (☰, top-left). You get <b>46 seconds</b> — the round ends and your result is sent automatically when the countdown hits zero.</li>
-      <li><b>Watch the corner HUD.</b> The ring shows your live laugh score; the number ticks up every time you're caught.</li>
-      <li><b>Load stimulus.</b> Add jokes, GIFs, images or clips to the deck in the drawer, then tap one to throw it fullscreen and try to break yourself (or a friend in the chair).</li>
-      <li><b>A laugh only counts once</b> per outburst — there's a short cooldown after each catch so one laugh doesn't rack up the score twice.</li>
-    </ol>
+    <h2>keep a straight face and TRY NOT TO LAUGH</h2>
     <div class="modal-actions">
       <button class="btn primary" id="introCloseBtn">Got it — start</button>
     </div>
@@ -474,7 +482,6 @@ const closeStim = document.getElementById('closeStim');
 
 const summaryOverlay = document.getElementById('summaryOverlay');
 const summaryBig = document.getElementById('summaryBig');
-const summaryCloseBtn = document.getElementById('summaryCloseBtn');
 
 // ---------- model + camera ----------
 async function initModel(){
@@ -701,8 +708,6 @@ function endSession(){
   window.__deadpanSessionResult = buildSessionResult();
   submitResultToEvent(window.__deadpanSessionResult);
 }
-summaryCloseBtn.addEventListener('click', ()=> summaryOverlay.classList.remove('show'));
-
 // ---------- stimulus deck ----------
 function renderDeck(){
   deckGrid.innerHTML = '';

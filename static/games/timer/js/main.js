@@ -196,6 +196,8 @@
   var roundInterval = null;
   var gazeStartTimeout = null;
   var cancelReveal = null;
+  var urgencyAudioContext = null;
+  var lastUrgencySecond = null;
   var calibrationIndex = 0;
   var calibrationClicks = 0;
   var calibrationErrors = [];
@@ -205,6 +207,17 @@
     [0.15, 0.50], [0.50, 0.50], [0.85, 0.50],
     [0.15, 0.82], [0.50, 0.82], [0.85, 0.82]
   ];
+
+  function unlockUrgencyAudio() {
+    var AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) return;
+    if (!urgencyAudioContext) urgencyAudioContext = new AudioContextCtor();
+    if (urgencyAudioContext.state === 'suspended') urgencyAudioContext.resume();
+  }
+
+  // Prime Web Audio during the participant's first interaction so the final
+  // countdown cue can play even after a camera/calibration delay.
+  document.addEventListener('pointerdown', unlockUrgencyAudio, { once: true });
 
   function cancelActiveFlow() {
     if (transitionInterval !== null) clearInterval(transitionInterval);
@@ -398,7 +411,7 @@
     showScreen(el.screenTransition);
     el.transitionEyebrow.textContent = cfg.transitionTitle.toUpperCase();
     el.transitionTitle.textContent = cfg.round === 1 ? 'Get ready' : 'Round complete';
-    el.transitionBody.textContent = cfg.transitionBody;
+    el.transitionBody.textContent = cfg.transitionBody + ' You have ' + cfg.durationSec + ' seconds. Time starts in…';
 
     var count = 3;
     el.transitionCountdown.textContent = String(count);
@@ -420,6 +433,11 @@
 
     showScreen(el.screenGame);
     el.timerHud.hidden = false;
+    lastUrgencySecond = null;
+    el.timerHud.classList.remove('timer-hud--urgent', 'timer-hud--entering');
+    // Begin at the bottom centre, then settle into the normal top-right HUD.
+    void el.timerHud.offsetWidth;
+    el.timerHud.classList.add('timer-hud--entering');
     el.instruction.innerHTML = instructionHtml(cfg);
 
     var durationMs = cfg.durationSec * 1000;
@@ -464,6 +482,42 @@
     var centiseconds = Math.floor((clamped % 1000) / 10);
     el.timerValueSec.textContent = String(wholeSec);
     el.timerValueMs.textContent = '.' + String(centiseconds).padStart(2, '0');
+    var isUrgent = clamped > 0 && clamped <= 10000;
+    el.timerHud.classList.toggle('timer-hud--urgent', isUrgent);
+    if (isUrgent) playUrgencyTone(clamped);
+  }
+
+  function playUrgencyTone(remainingMs) {
+    var second = Math.ceil(remainingMs / 1000);
+    if (second === lastUrgencySecond || second < 1) return;
+    lastUrgencySecond = second;
+
+    unlockUrgencyAudio();
+    if (!urgencyAudioContext) return;
+
+    var now = urgencyAudioContext.currentTime;
+    var intensity = (11 - second) / 10;
+    playCountdownBeep(now, 500 + intensity * 1050, 0.10 + intensity * 0.16, 0.05 + intensity * 0.12);
+    // The final five seconds get a second, higher-pitched pulse to make the
+    // deadline feel progressively more urgent.
+    if (second <= 5) {
+      playCountdownBeep(now + 0.18, 900 + intensity * 1250, 0.06 + intensity * 0.09, 0.035 + intensity * 0.10);
+    }
+  }
+
+  function playCountdownBeep(startTime, frequency, duration, volume) {
+    var oscillator = urgencyAudioContext.createOscillator();
+    var gain = urgencyAudioContext.createGain();
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(frequency, startTime);
+    oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.14, startTime + duration);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    oscillator.connect(gain);
+    gain.connect(urgencyAudioContext.destination);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration + 0.02);
   }
 
   function endRound(cfg, onDone) {
@@ -485,6 +539,8 @@
     wordSearch.stopRound();
     finishRoundBookkeeping(cfg);
     el.timerHud.hidden = true;
+    el.timerHud.classList.remove('timer-hud--urgent', 'timer-hud--entering');
+    lastUrgencySecond = null;
     currentRound = null;
     onDone();
   }
@@ -551,12 +607,26 @@
 
   function finishAndReveal() {
     var agg = aggregateSession();
+    if (hostOptions.skipReveal) {
+      finishHostedTimer(agg);
+      return;
+    }
     showScreen(el.screenReveal);
     var script = Reveal.buildRevealScript(agg.timerAttention.timerCheckCount);
     cancelReveal = Reveal.playReveal(el.revealContainer, script, function () {
       cancelReveal = null;
       showResults(agg);
     });
+  }
+
+  // The combined Gaze + Pressure Clock station moves directly into its gaze
+  // phase after the timed round, so it submits without rendering the reveal.
+  function finishHostedTimer(agg) {
+    window.__pressureClockSession = buildSessionResult(agg);
+    var submission = submitResultToEvent(window.__pressureClockSession);
+    if (typeof hostOptions.onTimerComplete === 'function') {
+      hostOptions.onTimerComplete(window.__pressureClockSession, submission);
+    }
   }
 
   function fmtSec(ms) {

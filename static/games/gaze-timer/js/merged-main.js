@@ -4,6 +4,7 @@
   var calibrationScreen = document.getElementById('merged-calibration-screen');
   var calibrationStatus = document.getElementById('merged-calibration-status');
   var startButton = document.getElementById('merged-start');
+  var skipCalibrationButton = document.getElementById('merged-skip-calibration');
   var experimentScreen = document.getElementById('experimentScreen');
   var timerApp = document.getElementById('app');
   var completedTimerSubmission = null;
@@ -151,9 +152,37 @@
   }
 
   startButton.addEventListener('click', function () {
+    skipCalibrationButton.disabled = true;
     begin().catch(function (err) {
       calibrationStatus.textContent = err.message || 'Could not start this station.';
       startButton.disabled = false;
+      skipCalibrationButton.disabled = false;
     });
+  });
+
+  skipCalibrationButton.addEventListener('click', async function () {
+    startButton.disabled = true;
+    skipCalibrationButton.disabled = true;
+    calibrationStatus.textContent = 'Loading images…';
+
+    try {
+      if (participantCategory && CATEGORY_IMAGE_NUMBERS[participantCategory]) {
+        images = await loadImagesForCategory(participantCategory, 2);
+      } else {
+        var allImages = await detectImages();
+        images = allImages.slice(0, 2);
+      }
+
+      if (!images || images.length === 0) {
+        throw new Error('No images found for this station. Please check station assets and reload.');
+      }
+
+      calibrationScreen.hidden = true;
+      startTimerPhase();
+    } catch (err) {
+      calibrationStatus.textContent = err.message || 'Could not skip calibration.';
+      startButton.disabled = false;
+      skipCalibrationButton.disabled = false;
+    }
   });
 })();

@@ -35,7 +35,11 @@ body {
   font-size: 18px;
   letter-spacing: 0.14em;
   color: var(--cream);
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
+.brand:hover,
+.brand:focus-visible { color: var(--zap); }
 
 .brand-mark {
   display: grid;

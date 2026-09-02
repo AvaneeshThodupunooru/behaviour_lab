@@ -45,6 +45,7 @@
 
   var el = {
     backendStatus: document.getElementById('backendStatus'),
+    brandLogo: document.getElementById('brandLogo'),
     screens: {
       welcome: document.getElementById('screen-welcome'),
       participant: document.getElementById('screen-participant'),
@@ -131,6 +132,17 @@
 
   el.btnStart.addEventListener('click', goToParticipantForm);
   el.btnBackToWelcome.addEventListener('click', function () { showScreen('welcome'); });
+  el.brandLogo.addEventListener('click', function () {
+    if (state.sessionId) loadSessionAndShowChecklist(state.sessionId);
+    else showScreen('welcome');
+  });
+  el.brandLogo.addEventListener('keydown', function (evt) {
+    if (evt.key === 'Enter' || evt.key === ' ') {
+      evt.preventDefault();
+      if (state.sessionId) loadSessionAndShowChecklist(state.sessionId);
+      else showScreen('welcome');
+    }
+  });
   el.btnStartNewParticipant.addEventListener('click', goToParticipantForm);
   el.btnNewParticipantFromReport.addEventListener('click', goToParticipantForm);
 

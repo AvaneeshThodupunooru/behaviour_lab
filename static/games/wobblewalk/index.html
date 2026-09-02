@@ -10,10 +10,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/games/wobblewalk/assets/index-Qfmm9Huq.js"></script>
+    <script type="module" crossorigin src="/games/wobblewalk/assets/index-BXjWbO9T.js"></script>
     <link rel="stylesheet" crossorigin href="/games/wobblewalk/assets/index-BxCa22WW.css">
+    <style>
+      .tt-home-link { position: fixed; top: 16px; left: 24px; z-index: 20; display: inline-flex; align-items: center; gap: 10px; color: #fff4e4; text-decoration: none; font-family: 'Baloo 2', 'Trebuchet MS', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: .14em; cursor: pointer; transition: color .2s ease; }
+      .tt-home-link:hover, .tt-home-link:focus-visible { color: #ffd23f; }
+      .tt-home-mark { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border: 3px solid #120b26; border-radius: 50%; background: #ffd23f; color: #120b26; box-shadow: 4px 4px 0 0 #120b26; }
+      .tt-home-mark svg { width: 20px; height: 20px; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <a class="tt-home-link" href="/" aria-label="Back to welcome screen">
+      <span class="tt-home-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6Z" /></svg></span>
+      THE THING
+    </a>
+    <div id="root"></div>
+
   </body>
 </html>
