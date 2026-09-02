@@ -126,6 +126,11 @@ const Metric = ({ icon, value, label }) => (
 );
 
 const ReportPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const eventParams = getEventParams();
+  const returnUrl = eventShellUrl(eventParams);
+
   return (
     <div className="ww-thanks-page" aria-live="polite">
       <style>{`
@@ -147,13 +152,11 @@ const ReportPage = () => {
         <p className="ww-thanks-kicker">All games complete</p>
         <h1 className="ww-thanks-title">Thank you for spending time and playing games with us.</h1>
         <p className="ww-thanks-copy">You can collect your report and check your score on the leaderboard at the next station.</p>
-        <div className="ww-thanks-next"><Footprints size={16} aria-hidden="true" /> Head to the next station</div>
+        <button className="ww-thanks-next" onClick={() => window.location.assign(returnUrl)} type="button"><Footprints size={16} aria-hidden="true" /> Head to the next station</button>
       </section>
     </div>
   );
 
-  const location = useLocation();
-  const navigate = useNavigate();
   const isSample = new URLSearchParams(location.search).get('sample') === '1';
   const report = location.state?.report || (isSample ? SAMPLE_REPORT : null);
   const game = report?.game_metrics;
@@ -179,9 +182,6 @@ const ReportPage = () => {
   const routePoints = (game.route || []).map((point) => `${point.x},${point.y}`).join(' ');
   const callouts = buildCallouts(game);
   const summary = getSummary(game, tier);
-  const eventParams = getEventParams();
-  const returnUrl = eventShellUrl(eventParams);
-
   return (
     <div className="ww-page max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-24" style={{ '--tier': tier.color }}>
       <style>{REPORT_CSS}</style>

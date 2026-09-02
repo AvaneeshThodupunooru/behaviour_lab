@@ -10,6 +10,7 @@
   var state = {
     sessionId: null,
     sessionDoc: null,
+    report: null,
     age: null,
     gender: null,
     category: null
@@ -50,6 +51,7 @@
       welcome: document.getElementById('screen-welcome'),
       participant: document.getElementById('screen-participant'),
       checklist: document.getElementById('screen-checklist'),
+      processing: document.getElementById('screen-processing'),
       report: document.getElementById('screen-report')
     },
     btnStart: document.getElementById('btnStart'),
@@ -68,9 +70,9 @@
     btnContinue: document.getElementById('btnContinue'),
     btnFinishSession: document.getElementById('btnFinishSession'),
     btnStartNewParticipant: document.getElementById('btnStartNewParticipant'),
-    reportMeta: document.getElementById('reportMeta'),
-    reportDisclaimer: document.getElementById('reportDisclaimer'),
     reportBody: document.getElementById('reportBody'),
+    reportActionNote: document.getElementById('reportActionNote'),
+    btnDownloadReport: document.getElementById('btnDownloadReport'),
     btnBackToChecklist: document.getElementById('btnBackToChecklist'),
     btnNewParticipantFromReport: document.getElementById('btnNewParticipantFromReport')
   };
@@ -79,6 +81,8 @@
     Object.keys(el.screens).forEach(function (key) {
       el.screens[key].hidden = key !== name;
     });
+    // The report needs more width than the rest of the shell.
+    document.body.classList.toggle('shell-report', name === 'report');
   }
 
   // ---------------------------------------------------------------------
@@ -255,7 +259,7 @@
       el.btnContinue.onclick = function () { navigateToGame(next); };
     } else {
       el.btnContinue.textContent = 'View final report';
-      el.btnContinue.onclick = showReport;
+      el.btnContinue.onclick = function () { showReport({ processing: true }); };
     }
 
     showScreen('checklist');
@@ -299,7 +303,14 @@
     window.location.href = url;
   }
 
-  async function loadSessionAndShowChecklist(sessionId) {
+  /**
+   * @param {string} sessionId
+   * @param {{stayOnChecklist?: boolean}} [options] when omitted, a session whose
+   *   four stations are all done goes straight on to processing and the report —
+   *   that is the smooth handoff from the final station (§15). Buttons that mean
+   *   "show me the run sheet" pass stayOnChecklist so they are not bounced back.
+   */
+  async function loadSessionAndShowChecklist(sessionId, options) {
     try {
       var doc = await fetchSession(sessionId);
       state.sessionId = sessionId;
@@ -312,6 +323,10 @@
           state.category = restored.category;
         }
       }
+      if (!(options && options.stayOnChecklist) && allStationsComplete(doc)) {
+        showReport({ processing: true });
+        return;
+      }
       renderChecklist(doc);
     } catch (err) {
       setSessionIdInUrl('');
@@ -322,7 +337,7 @@
   }
 
   el.btnRefreshStatus.addEventListener('click', function () {
-    if (state.sessionId) loadSessionAndShowChecklist(state.sessionId);
+    if (state.sessionId) loadSessionAndShowChecklist(state.sessionId, { stayOnChecklist: true });
   });
 
   el.btnFinishSession.addEventListener('click', async function () {
@@ -332,353 +347,84 @@
       await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/complete', { method: 'POST' });
     } catch (err) { /* best-effort; report screen still works without this */ }
     el.btnFinishSession.disabled = false;
-    showReport();
+    showReport({ processing: true });
   });
 
   // ---------------------------------------------------------------------
-  // Screen: Final report
+  // Screens: Result processing + Final report
+  //
+  // Rendering lives in static/shell/report/*. This file only decides when the
+  // report may appear, hands the scored payload to Report.render, and wires the
+  // download button to ReportPDF. Keeping the two apart is what lets one set of
+  // components serve both the screen and the PDF.
   // ---------------------------------------------------------------------
-  var GAME_ORDER_FOR_REPORT = ['gaze', 'timer', 'deadpan', 'wobblewalk'];
+  var PROCESSING_MIN_MS = 1400; // a deliberate beat, not a fake loading bar
 
-  // Several report cards pass raw summary keys straight through as labels
-  // (meanReactionTimeMs, pathEfficiencyPct, ...). The CSS uppercases every
-  // label, which turned those into unreadable runs like MEANREACTIONTIMEMS on
-  // the participant's report. Split the camel-case boundaries and expand the
-  // two unit suffixes the summarizers use. Labels that are already written as
-  // words ('Images Viewed') pass through untouched.
-  function prettyLabel(key) {
-    return String(key)
-      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-      .replace(/\bMs\b/g, '(ms)')
-      .replace(/\bPct\b/g, '(%)')
-      .replace(/\bSeconds\b/g, '(s)')
-      .replace(/^./, function (c) { return c.toUpperCase(); });
+  function delay(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
   }
 
-  function renderMetricGrid(entries) {
-    var dl = document.createElement('dl');
-    dl.className = 'metric-grid';
-    entries.forEach(function (pair) {
-      if (pair[1] === undefined || pair[1] === null) return;
-      var dt = document.createElement('dt');
-      dt.textContent = prettyLabel(pair[0]);
-      var dd = document.createElement('dd');
-      dd.textContent = pair[1];
-      dl.appendChild(dt);
-      dl.appendChild(dd);
-    });
-    return dl;
-  }
-
-  function getVibe(score, maxScore) {
-    if (score === null || score === undefined) return 'Your lab snapshot is ready.';
-    var pct = score / maxScore;
-    if (pct >= 0.85) return 'HIGH CONSISTENCY & RECALL';
-    if (pct >= 0.70) return 'SOLID PERFORMANCE ACROSS ACTIVITIES';
-    if (pct >= 0.50) return 'BALANCED PARTICIPATION';
-    return 'SESSION COMPLETED';
-  }
-
-  function renderGazeImageOverlay(canvas, imgUrl, samples) {
-    var ctx = canvas.getContext('2d');
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function () {
-      canvas.width = img.naturalWidth || 600;
-      canvas.height = img.naturalHeight || 400;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      if (!samples || samples.length === 0) return;
-
-      // Draw gaze scanpath (connecting line)
-      ctx.strokeStyle = 'rgba(255, 77, 141, 0.7)';
-      ctx.lineWidth = Math.max(2, canvas.width * 0.004);
-      ctx.beginPath();
-      samples.forEach(function (pt, idx) {
-        if (idx === 0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
-      });
-      ctx.stroke();
-
-      // Draw fixation points
-      samples.forEach(function (pt) {
-        ctx.fillStyle = 'rgba(255, 210, 63, 0.8)';
-        ctx.beginPath();
-        var radius = Math.max(3, canvas.width * 0.007);
-        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = 'rgba(18, 11, 38, 0.85)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      });
-    };
-    img.onerror = function () {
-      canvas.width = 400;
-      canvas.height = 250;
-      ctx.fillStyle = '#251850';
-      ctx.fillRect(0, 0, 400, 250);
-      ctx.fillStyle = '#fff4e4';
-      ctx.font = '13px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Poster image', 200, 125);
-    };
-    img.src = imgUrl;
-  }
-
-  function renderRouteCanvas(canvas, route) {
-    var ctx = canvas.getContext('2d');
-    canvas.width = 300;
-    canvas.height = 300;
-    ctx.fillStyle = '#120b26';
-    ctx.fillRect(0, 0, 300, 300);
-
-    // Center straight reference line
-    ctx.strokeStyle = 'rgba(255, 244, 228, 0.25)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(150, 20);
-    ctx.lineTo(150, 280);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    if (!route || route.length === 0) return;
-
-    // Draw actual walked route
-    ctx.strokeStyle = '#3fe0a0';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    route.forEach(function (pt, idx) {
-      var px = (pt.x / 100) * 300;
-      var py = (pt.y / 100) * 300;
-      if (idx === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    });
-    ctx.stroke();
-  }
-
-  function renderReport(report) {
-    var maxScore = report.max_score || 100;
-    var completedCount = report.games_completed.length;
-    el.reportMeta.textContent = 'Participant ' + (report.participant && report.participant.participant_id) +
-      ' — ' + completedCount + ' of 4 tracked activities completed.';
-    el.reportDisclaimer.textContent = report.disclaimer || '';
-
-    el.reportBody.innerHTML = '';
-
-    // 1. Hero overall score block
-    var hero = document.createElement('div');
-    hero.className = 'report-hero';
-    var heroTitle = document.createElement('div');
-    heroTitle.className = 'report-hero-title';
-    heroTitle.textContent = 'YOUR THE THING REPORT';
-    hero.appendChild(heroTitle);
-    var vibe = document.createElement('div');
-    vibe.className = 'report-vibe';
-    vibe.textContent = getVibe(report.overall_score, maxScore);
-    hero.appendChild(vibe);
-    var score = document.createElement('div');
-    score.className = 'report-score-big';
-    score.textContent = report.overall_score === null || report.overall_score === undefined
-      ? '—'
-      : Number(report.overall_score).toFixed(1) + ' / ' + maxScore;
-    hero.appendChild(score);
-
-    // Score cards bar
-    var breakdownGrid = document.createElement('div');
-    breakdownGrid.className = 'score-breakdown-grid';
-    GAME_ORDER_FOR_REPORT.forEach(function (key) {
-      var s = report.summary && report.summary[key];
-      var item = document.createElement('div');
-      item.className = 'score-breakdown-item';
-      var label = document.createElement('div');
-      label.className = 'score-breakdown-label';
-      label.textContent = key === 'timer' ? 'Pressure' : key === 'gaze' ? 'Gaze Recall' : key === 'deadpan' ? 'DEADPAN' : 'WobbleWalk';
-      var val = document.createElement('div');
-      val.className = 'score-breakdown-val';
-      val.textContent = (s && s.score !== undefined && s.score !== null) ? Number(s.score).toFixed(1) + '/25' : '—';
-      item.appendChild(label);
-      item.appendChild(val);
-      breakdownGrid.appendChild(item);
-    });
-    hero.appendChild(breakdownGrid);
-    el.reportBody.appendChild(hero);
-
-    // 2. Activity cards
-    GAME_ORDER_FOR_REPORT.forEach(function (key) {
-      var summary = report.summary && report.summary[key];
-      var card = document.createElement('div');
-      card.className = 'report-card';
-
-      var heading = document.createElement('h3');
-      heading.textContent = (summary && summary.label) || (key.charAt(0).toUpperCase() + key.slice(1));
-      card.appendChild(heading);
-
-      if (summary && summary.score !== undefined && summary.score !== null) {
-        var scoreLine = document.createElement('div');
-        scoreLine.className = 'game-score';
-        scoreLine.textContent = Number(summary.score).toFixed(1) + ' / 25';
-        card.appendChild(scoreLine);
-      }
-
-      if (!summary) {
-        var missing = document.createElement('p');
-        missing.className = 'missing';
-        missing.textContent = 'Not completed for this session.';
-        card.appendChild(missing);
-        el.reportBody.appendChild(card);
-        return;
-      }
-
-      if (summary.available === false) {
-        var unavailable = document.createElement('p');
-        unavailable.className = 'missing';
-        unavailable.textContent = 'Recorded, but metrics could not be computed' + (summary.reason ? ' (' + summary.reason + ').' : '.');
-        card.appendChild(unavailable);
-        el.reportBody.appendChild(card);
-        return;
-      }
-
-      // Activity-specific rendering
-      if (key === 'gaze') {
-        var gazeResultDoc = state.sessionDoc && state.sessionDoc.games && state.sessionDoc.games.gaze && state.sessionDoc.games.gaze.result;
-        var imagesData = (gazeResultDoc && gazeResultDoc.images) || [];
-
-        // Metric grid for basic gaze info
-        // Image count varies by participant category (and by how many
-        // files actually exist per category), so read the count the
-        // station actually reported rather than assuming a fixed number.
-        var gazeEntries = [
-          ['Images Viewed', summary.imagesViewed || imagesData.length || '—'],
-          ['Recall Accuracy', summary.recallScore || '—'],
-          ['Gaze Samples Captured', summary.gazeSamplesCollected || '0']
-        ];
-        card.appendChild(renderMetricGrid(gazeEntries));
-
-        // Gaze-path overlay for whichever images this participant's
-        // category actually showed (varies by category — do not assume
-        // ids 1/2, and use each image's own stored url/extension).
-        var imgGrid = document.createElement('div');
-        imgGrid.className = 'gaze-images-grid';
-
-        imagesData.forEach(function (imgInfo) {
-          var imgCard = document.createElement('div');
-          imgCard.className = 'gaze-image-card';
-          var imgTitle = document.createElement('h4');
-          imgTitle.textContent = 'Image ' + imgInfo.id + ' — Gaze Path';
-          imgCard.appendChild(imgTitle);
-
-          var canvasWrap = document.createElement('div');
-          canvasWrap.className = 'gaze-canvas-wrap';
-          var canvas = document.createElement('canvas');
-          canvasWrap.appendChild(canvas);
-          imgCard.appendChild(canvasWrap);
-
-          var samples = imgInfo.samples || [];
-          var imgUrl = '/games/gaze-timer/' + imgInfo.url;
-          renderGazeImageOverlay(canvas, imgUrl, samples);
-
-          imgGrid.appendChild(imgCard);
-        });
-        card.appendChild(imgGrid);
-
-        // Delayed recall question breakdown
-        var qResults = (gazeResultDoc && gazeResultDoc.questionResults) || [];
-        if (qResults.length > 0) {
-          var qTitle = document.createElement('h4');
-          qTitle.style.marginTop = '16px';
-          qTitle.style.marginBottom = '6px';
-          qTitle.textContent = 'Recall Questions Breakdown';
-          card.appendChild(qTitle);
-
-          var qList = document.createElement('ul');
-          qList.className = 'recall-questions-list';
-          qResults.forEach(function (q, idx) {
-            var li = document.createElement('li');
-            li.className = 'recall-question-item';
-
-            var qText = document.createElement('div');
-            qText.className = 'recall-q-text';
-            qText.textContent = (idx + 1) + '. '
-              + (q.imageId ? '(Image ' + q.imageId + ') ' : '')
-              + (q.questionText || q.prompt || 'Recall Question');
-            li.appendChild(qText);
-
-            var qAns = document.createElement('div');
-            qAns.className = 'recall-q-ans';
-            var badge = document.createElement('span');
-            badge.className = q.correct ? 'badge-correct' : 'badge-incorrect';
-            badge.textContent = q.correct ? '✓ Correct' : '✗ Incorrect';
-            qAns.appendChild(badge);
-            qAns.appendChild(document.createTextNode('Selected: ' + (q.selected || 'None') + (q.correct ? '' : ' (Correct: ' + (q.correctAnswer || '—') + ')')));
-            li.appendChild(qAns);
-
-            qList.appendChild(li);
-          });
-          card.appendChild(qList);
-        }
-      } else if (key === 'wobblewalk') {
-        var wwEntries = Object.keys(summary)
-          .filter(function (k) { return k !== 'label' && k !== 'note' && k !== 'score' && k !== 'available'; })
-          .map(function (k) { return [k, summary[k]]; });
-        card.appendChild(renderMetricGrid(wwEntries));
-
-        // Route visualization if route points exist
-        var wwResult = state.sessionDoc && state.sessionDoc.games && state.sessionDoc.games.wobblewalk && state.sessionDoc.games.wobblewalk.result;
-        if (wwResult && wwResult.route && wwResult.route.length > 0) {
-          var routeWrap = document.createElement('div');
-          routeWrap.className = 'route-canvas-wrap';
-          var routeTitle = document.createElement('h4');
-          routeTitle.textContent = 'Walked Route Replay';
-          routeTitle.style.marginBottom = '6px';
-          routeWrap.appendChild(routeTitle);
-          var routeCanvas = document.createElement('canvas');
-          routeWrap.appendChild(routeCanvas);
-          renderRouteCanvas(routeCanvas, wwResult.route);
-          card.appendChild(routeWrap);
-        }
-      } else {
-        var entries = Object.keys(summary)
-          .filter(function (k) { return k !== 'label' && k !== 'note' && k !== 'score'; })
-          .map(function (k) { return [k, summary[k]]; });
-        card.appendChild(renderMetricGrid(entries));
-      }
-
-      if (summary.note) {
-        var note = document.createElement('p');
-        note.className = 'missing';
-        note.style.marginTop = '10px';
-        note.textContent = summary.note;
-        card.appendChild(note);
-      }
-
-      el.reportBody.appendChild(card);
-    });
-
-    showScreen('report');
-  }
-
-  async function showReport() {
-    if (!state.sessionId) return;
-    try {
-      await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/complete', { method: 'POST' }).catch(function () {});
-      var resDoc = await fetchSession(state.sessionId);
-      state.sessionDoc = resDoc;
-      var res = await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/report');
-      var data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Could not load the report.');
-      renderReport(data);
-    } catch (err) {
-      el.reportMeta.textContent = 'Could not load the report: ' + err.message;
-      el.reportBody.innerHTML = '';
-      el.reportDisclaimer.textContent = '';
-      showScreen('report');
+  function allStationsComplete(doc) {
+    for (var i = 0; i < GAME_DEFS.length; i++) {
+      if (!isGameComplete(doc, GAME_DEFS[i].key)) return false;
     }
+    return true;
   }
+
+  function setDownloadVisible(visible) {
+    el.btnDownloadReport.hidden = !visible;
+    el.reportActionNote.hidden = !visible;
+  }
+
+  /**
+   * Whether the report opens at all is the server's call (report_ready, set
+   * once all four stations have a score); this only chooses the route in.
+   * @param {{processing?: boolean}} [options] play the processing beat first
+   */
+  async function showReport(options) {
+    if (!state.sessionId) return;
+    var withProcessing = !!(options && options.processing);
+    var startedAt = Date.now();
+    state.report = null;
+    setDownloadVisible(false);
+    if (withProcessing) showScreen('processing');
+    try {
+      // Marks the session finished so the scorer works on a closed session.
+      await fetch('/api/sessions/' + encodeURIComponent(state.sessionId) + '/complete',
+        { method: 'POST' }).catch(function () {});
+      state.sessionDoc = await fetchSession(state.sessionId);
+      var report = await ReportGenerator.load(state.sessionId, '');
+      if (withProcessing) {
+        var waited = Date.now() - startedAt;
+        if (waited < PROCESSING_MIN_MS) await delay(PROCESSING_MIN_MS - waited);
+      }
+      state.report = report;
+      setDownloadVisible(Report.render(el.reportBody, report));
+    } catch (err) {
+      Report.renderError(el.reportBody, err.message);
+    }
+    showScreen('report');
+    window.scrollTo(0, 0);
+  }
+
+  el.btnDownloadReport.addEventListener('click', function () {
+    if (!state.report) return;
+    var btn = el.btnDownloadReport;
+    var label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Preparing…';
+    // Posters, heat layers and fonts have to be painted before the print
+    // dialog opens, so this resolves later than a plain window.print().
+    ReportPDF.download(el.reportBody, state.report)
+      .catch(function () { return false; })
+      .then(function () {
+        btn.disabled = false;
+        btn.textContent = label;
+      });
+  });
 
   el.btnBackToChecklist.addEventListener('click', function () {
-    if (state.sessionId) loadSessionAndShowChecklist(state.sessionId);
+    if (state.sessionId) loadSessionAndShowChecklist(state.sessionId, { stayOnChecklist: true });
     else showScreen('welcome');
   });
 

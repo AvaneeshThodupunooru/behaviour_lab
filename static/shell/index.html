@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#120b26" />
   <title>THE THING — Event</title>
   <link rel="stylesheet" href="shell.css" />
+  <link rel="stylesheet" href="report/report.css" />
 </head>
 <body>
 
@@ -114,24 +115,41 @@
       </div>
     </section>
 
+    <!-- RESULT PROCESSING — the beat between the last station and the report -->
+    <section id="screen-processing" class="screen" hidden>
+      <div class="card card--center">
+        <span class="tt-eyebrow" style="background:var(--zap)">Result processing</span>
+        <h2 style="margin-top:14px">Scoring the four stations</h2>
+        <p class="muted" id="processingNote">Reading what each station recorded and turning it into your report.</p>
+        <div class="rp-progress" role="progressbar" aria-label="Scoring in progress"><span></span></div>
+      </div>
+    </section>
+
     <!-- FINAL REPORT -->
     <section id="screen-report" class="screen" hidden>
-      <div class="card">
-        <span class="tt-eyebrow" style="background:var(--tang)">Results</span>
-        <h2 style="margin-top:14px">Your THE THING report</h2>
-        <p class="muted" id="reportMeta"></p>
-        <p id="reportDisclaimer" class="disclaimer"></p>
-        <div id="reportBody" class="report-body"></div>
-        <div class="actions actions--spread">
-          <button id="btnBackToChecklist" class="btn btn--ghost">Back to checklist</button>
-          <button id="btnNewParticipantFromReport" class="btn btn--primary">Start new participant</button>
+      <div class="report-shell">
+        <div class="report-actionbar">
+          <span class="tt-eyebrow" style="background:var(--tang)">Results</span>
+          <div class="report-actionbar-right">
+            <button id="btnBackToChecklist" class="btn btn--ghost btn--small">Back to checklist</button>
+            <button id="btnNewParticipantFromReport" class="btn btn--ghost btn--small">New participant</button>
+            <button id="btnDownloadReport" class="btn btn--primary">Download report</button>
+          </div>
+          <p class="report-actionbar-note" id="reportActionNote">Download opens your browser's print dialog — pick “Save as PDF”. The report is written to A4 as real text, so the pages stay sharp and searchable.</p>
         </div>
+        <div id="reportBody" class="report-doc-host"></div>
       </div>
     </section>
 
   </main>
 
   <script src="/static/shared/event-client.js"></script>
+  <script src="report/report-dom.js"></script>
+  <script src="report/report-charts.js"></script>
+  <script src="report/report-heatmap.js"></script>
+  <script src="report/report-walkpath.js"></script>
+  <script src="report/report-sections.js"></script>
+  <script src="report/report.js"></script>
   <script src="shell.js"></script>
 </body>
 </html>

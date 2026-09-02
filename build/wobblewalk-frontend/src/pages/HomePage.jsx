@@ -76,7 +76,7 @@ const HomePage = () => {
             if (!outcome.ok) console.warn('WobbleWalk: could not submit result to event server:', outcome.error);
           });
       }
-      navigate('/report', { state: { report: results } });
+      navigate('/report' + window.location.search, { state: { report: results } });
     } catch (err) {
       setError(err.message || 'The round could not be scored.');
       setIsProcessing(false);

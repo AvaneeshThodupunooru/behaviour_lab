@@ -14,8 +14,33 @@
     var available = false;
     var running = false;
     var trackerStartedOnThisPage = false;
+    var ownsTracker = false;
+    var previousCallbacks = null;
     var latestSample = null;
     var startPromise = null;
+
+    // GazeCloudAPI exposes single-slot callbacks (OnResult = fn), not an
+    // event-listener list. In the combined Gaze + Pressure Clock station the
+    // gaze phase has its own dispatcher installed on those same slots, so
+    // overwriting them without putting them back left the gaze phase with a
+    // dead tracker and zero recorded samples. Remember what was there.
+    var CALLBACK_NAMES = ['OnResult', 'OnCalibrationComplete', 'OnCamDenied', 'OnError'];
+
+    function rememberCallbacks() {
+      if (previousCallbacks || typeof root.GazeCloudAPI === 'undefined') return;
+      previousCallbacks = {};
+      CALLBACK_NAMES.forEach(function (name) {
+        previousCallbacks[name] = root.GazeCloudAPI[name];
+      });
+    }
+
+    function restoreCallbacks() {
+      if (!previousCallbacks || typeof root.GazeCloudAPI === 'undefined') return;
+      CALLBACK_NAMES.forEach(function (name) {
+        root.GazeCloudAPI[name] = previousCallbacks[name];
+      });
+      previousCallbacks = null;
+    }
 
     function clamp01(value) {
       return Math.max(0, Math.min(1, value));
@@ -38,6 +63,7 @@
     }
 
     function attachCallbacks(resolve) {
+      rememberCallbacks();
       root.GazeCloudAPI.OnResult = function (gazeData) {
         // GazeCloud uses state 0 for a valid, calibrated gaze estimate.
         if (!gazeData || gazeData.state !== 0) return;
@@ -99,6 +125,7 @@
       startPromise = new Promise(function (resolve) {
         try {
           attachCallbacks(resolve);
+          ownsTracker = true;
           root.GazeCloudAPI.StartEyeTracking();
         } catch (err) {
           fail((err && err.message) || 'Unexpected GazeCloudAPI error.', resolve);
@@ -115,13 +142,26 @@
       if (available) running = true;
     }
 
-    function stop() {
+    /**
+     * Stop consuming samples and hand GazeCloud's callbacks back to whoever
+     * owned them before this pipeline started, leaving the tracker itself
+     * running. Used by a host page that has a second gaze phase to run in the
+     * same document (the combined Gaze + Pressure Clock station).
+     */
+    function release() {
       running = false;
       available = false;
       latestSample = null;
       startPromise = null;
       trackerStartedOnThisPage = false;
-      if (typeof root.GazeCloudAPI !== 'undefined') {
+      restoreCallbacks();
+    }
+
+    function stop() {
+      var shouldStopTracker = ownsTracker;
+      release();
+      ownsTracker = false;
+      if (shouldStopTracker && typeof root.GazeCloudAPI !== 'undefined') {
         try {
           root.GazeCloudAPI.StopEyeTracking();
         } catch (err) {
@@ -138,7 +178,7 @@
       return latestSample;
     }
 
-    return { start: start, pause: pause, resume: resume, stop: stop, isAvailable: isAvailable, getLatestSample: getLatestSample };
+    return { start: start, pause: pause, resume: resume, release: release, stop: stop, isAvailable: isAvailable, getLatestSample: getLatestSample };
   }
 
   root.PressureClockGazePipeline = { createGazePipeline: createGazePipeline };

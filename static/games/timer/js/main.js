@@ -622,6 +622,11 @@
   // The combined Gaze + Pressure Clock station moves directly into its gaze
   // phase after the timed round, so it submits without rendering the reveal.
   function finishHostedTimer(agg) {
+    // Hand GazeCloud's callback slots back to the host's gaze phase, which
+    // installed its own dispatcher before this round claimed them. Without
+    // this the gaze phase records no samples at all and the participant's
+    // report has no heatmap to draw. Keeps the tracker itself running.
+    if (gazePipeline) gazePipeline.release();
     window.__pressureClockSession = buildSessionResult(agg);
     var submission = submitResultToEvent(window.__pressureClockSession);
     if (typeof hostOptions.onTimerComplete === 'function') {

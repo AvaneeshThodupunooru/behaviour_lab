@@ -22,12 +22,12 @@ DEADPAN → Final Report.
 
 ## 2. Install
 
-```bat
-cd C:\Avaneesh\Neuro\Game        (or wherever this folder was copied/cloned)
+```powershell
+cd C:\path\to\The-thing-website
 
 py -3.9 -m venv .venv
-.venv\Scripts\python -m pip install --upgrade pip
-.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install -r behaviour_lab\requirements.txt
 ```
 
 ## 3. Configure MongoDB (optional but recommended for the event)
@@ -58,11 +58,19 @@ explains why.
 
 ## 4. Run
 
-```bat
-.venv\Scripts\python -m uvicorn backend.app:app --host 0.0.0.0 --port 8000
+From the repository root, run:
+
+```powershell
+cd C:\path\to\The-thing-website
+Push-Location behaviour_lab
+..\.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
 ```
 
-Open **http://localhost:8000/** in Chrome and click *Start new participant*.
+Keep this terminal open while the event is running. Open **http://localhost:8000/**
+in Chrome and click *Start new participant*.
+
+If the server is already running, do not start a second copy on port 8000. Stop the
+existing process with `Ctrl+C` first.
 
 ## 5. Event-day workflow
 
@@ -77,8 +85,12 @@ Open **http://localhost:8000/** in Chrome and click *Start new participant*.
    - **DEADPAN**: use **Timed Challenge** mode (results submit automatically
      only in timed mode).
 4. Return to the shell between games (checklist tracks completion).
-5. Finish session → final report shows all completed stations.
-6. If a submission fails, the game page offers Retry (results are also kept in
+5. After WobbleWalk, click **Head to the next station**. It returns to the event
+   shell with the session ID; the combined final report then shows all completed
+   stations.
+6. Click **Download report** in the report header and choose **Save as PDF** in
+   the browser print dialog.
+7. If a submission fails, the game page offers Retry (results are also kept in
    browser localStorage until sent).
 
 Camera games must run as separate full-page tabs — never iframe them, and run

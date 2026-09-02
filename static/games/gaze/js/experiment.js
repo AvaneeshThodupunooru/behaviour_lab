@@ -10,8 +10,7 @@ const Experiment = (function () {
   let selectedQuestions = []; // fixed random selection for this session
 
   // -----------------------------------------------------------------
-  // Question banks — 8 objective visual-recall questions per image.
-  // Only images 1 and 2 are used in the active experiment.
+  // Question banks — objective visual-recall questions per image.
   // -----------------------------------------------------------------
   const QUESTION_BANK = {
     1: [
@@ -33,6 +32,10 @@ const Experiment = (function () {
       { id: 'img2-q6', prompt: 'Are the people in the image standing or sitting?', options: ['All standing', 'All sitting', 'Mix of both', 'Cannot tell'], answer: 'All standing' },
       { id: 'img2-q7', prompt: 'Is there any food or drink visible besides the wine glass?', options: ['Yes', 'No', 'Cannot tell', 'Only the wine glass'], answer: 'Only the wine glass' },
       { id: 'img2-q8', prompt: 'What is the general mood of the scene?', options: ['Celebratory or festive', 'Calm and quiet', 'Tense or serious', 'Sad or somber'], answer: 'Celebratory or festive' }
+    ],
+    5: [
+      { id: 'img5-q1', prompt: 'What color was the cap?', options: ['Green', 'Blue', 'Black', 'Grey'], answer: 'Grey' },
+      { id: 'img5-q2', prompt: 'What color shirt was the guy beside Sushant Singh Rajput wearing?', options: ['Orange', 'Peach', 'Light blue', 'Green'], answer: 'Orange' }
     ]
   };
 

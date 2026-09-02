@@ -24,12 +24,9 @@ async function findImageForNumber(n) {
 
 async function detectImages() {
   const images = [];
-  let n = 1;
-  while (true) {
+  for (let n = 1; n <= 100; n++) {
     const found = await findImageForNumber(n);
-    if (!found) break;
-    images.push(found);
-    n++;
+    if (found) images.push(found);
   }
   return images;
 }
