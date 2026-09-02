@@ -216,9 +216,85 @@ input[type="text"] {
   background: #182126;
   color: #fff;
 }
-.report-hero-title { font-size: 12px; letter-spacing: .12em; opacity: .7; font-weight: 800; }
-.report-vibe { margin-top: 7px; font-size: 20px; font-weight: 900; }
+.report-hero-title {
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  opacity: .7;
+  font-weight: 800;
+}
+.report-vibe { margin-top: 7px; font-size: 24px; font-weight: 900; line-height: 1.1; }
 .report-score-big { margin-top: 12px; font-size: 36px; font-weight: 900; }
+.report-tier-note {
+  margin: 10px 0 0;
+  max-width: 52ch;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.roast-band {
+  margin: 0 0 16px;
+  padding: 18px 20px;
+  border: 1px solid #c4db62;
+  border-radius: 10px;
+  background: #e4f88a;
+}
+.roast-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #5c6b34;
+}
+.roast-quote {
+  margin: 8px 0 0;
+  max-width: 46ch;
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.25;
+  color: #232d16;
+}
+
+.report-card-sub {
+  margin: -6px 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.station-verdict {
+  margin: 0 0 12px;
+  padding-left: 11px;
+  border-left: 3px solid var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.station-callouts {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.station-callouts li {
+  padding: 9px 0 9px 18px;
+  position: relative;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.station-callouts li:last-child { border-bottom: none; padding-bottom: 2px; }
+.station-callouts li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--muted);
+}
 
 .score-breakdown-grid {
   display: grid;
@@ -320,16 +396,94 @@ input[type="text"] {
 }
 
 .route-canvas-wrap {
-  margin: 12px 0;
-  text-align: center;
+  margin: 14px 0 0;
+}
+.route-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+.route-head h4 { margin: 0; font-size: 13px; }
+.route-legend {
+  display: flex;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.route-legend span { display: flex; align-items: center; gap: 5px; }
+.route-legend i { display: block; width: 16px; height: 3px; background: #ff8268; }
+.route-legend i.ideal {
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 4px, transparent 4px 7px);
 }
 .route-canvas-wrap canvas {
-  max-width: 260px;
+  display: block;
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid var(--line);
 }
+
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.heat-ramp {
+  flex: 1;
+  height: 7px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: linear-gradient(90deg,
+    #0a1046 0%, #1a3ac8 14%, #00bacd 32%, #28d25a 52%,
+    #ffdc3c 70%, #ff8218 86%, #f02820 100%);
+}
+
+.canvas-note {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--muted);
+  text-align: left;
+}
+
+.research-block {
+  margin-top: 14px;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: #f4f7fa;
+}
+.research-head {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.research-intro {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.research-list {
+  margin: 9px 0 0;
+  padding-left: 17px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #43505a;
+}
+.research-list li { margin-top: 5px; }
+.research-list li:first-child { margin-top: 0; }
 
 .bar-wrap {
   margin: 8px 0;

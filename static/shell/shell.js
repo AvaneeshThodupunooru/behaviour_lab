@@ -278,92 +278,39 @@
   }
 
   function getVibe(score, maxScore) {
-    if (score === null || score === undefined) return 'Your lab snapshot is ready.';
-    var pct = score / maxScore;
-    if (pct >= 0.85) return 'HIGH CONSISTENCY & RECALL';
-    if (pct >= 0.70) return 'SOLID PERFORMANCE ACROSS ACTIVITIES';
-    if (pct >= 0.50) return 'BALANCED PARTICIPATION';
-    return 'SESSION COMPLETED';
+    return window.ReportRoast.overallTier(score, maxScore);
   }
 
-  function renderGazeImageOverlay(canvas, imgUrl, samples) {
-    var ctx = canvas.getContext('2d');
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function () {
-      canvas.width = img.naturalWidth || 600;
-      canvas.height = img.naturalHeight || 400;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  // The one part of a station card that says nothing about the participant:
+  // what the instrument is actually for. Rendered on every card, including
+  // skipped ones, because it is a property of the station and not the run.
+  function renderResearchBlock(key) {
+    var lines = window.ReportRoast.stationResearch(key);
+    var block = document.createElement('div');
+    block.className = 'research-block';
+    if (!lines.length) return block;
 
-      if (!samples || samples.length === 0) return;
+    var head = document.createElement('div');
+    head.className = 'research-head';
+    head.textContent = 'Also used in autism research';
+    block.appendChild(head);
 
-      // Draw gaze scanpath (connecting line)
-      ctx.strokeStyle = 'rgba(255, 77, 94, 0.65)';
-      ctx.lineWidth = Math.max(2, canvas.width * 0.004);
-      ctx.beginPath();
-      samples.forEach(function (pt, idx) {
-        if (idx === 0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
-      });
-      ctx.stroke();
+    var intro = document.createElement('p');
+    intro.className = 'research-intro';
+    intro.textContent = window.ReportRoast.researchIntro;
+    block.appendChild(intro);
 
-      // Draw fixation points
-      samples.forEach(function (pt) {
-        ctx.fillStyle = 'rgba(255, 200, 87, 0.75)';
-        ctx.beginPath();
-        var radius = Math.max(3, canvas.width * 0.007);
-        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = 'rgba(255, 77, 94, 0.9)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      });
-    };
-    img.onerror = function () {
-      canvas.width = 400;
-      canvas.height = 250;
-      ctx.fillStyle = '#f1f1ee';
-      ctx.fillRect(0, 0, 400, 250);
-      ctx.fillStyle = '#667079';
-      ctx.font = '13px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Poster image', 200, 125);
-    };
-    img.src = imgUrl;
-  }
-
-  function renderRouteCanvas(canvas, route) {
-    var ctx = canvas.getContext('2d');
-    canvas.width = 300;
-    canvas.height = 300;
-    ctx.fillStyle = '#15151c';
-    ctx.fillRect(0, 0, 300, 300);
-
-    // Center straight reference line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(150, 20);
-    ctx.lineTo(150, 280);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    if (!route || route.length === 0) return;
-
-    // Draw actual walked route
-    ctx.strokeStyle = '#49d6c4';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    route.forEach(function (pt, idx) {
-      var px = (pt.x / 100) * 300;
-      var py = (pt.y / 100) * 300;
-      if (idx === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
+    var list = document.createElement('ul');
+    list.className = 'research-list';
+    lines.forEach(function (line) {
+      var li = document.createElement('li');
+      li.textContent = line;
+      list.appendChild(li);
     });
-    ctx.stroke();
+    block.appendChild(list);
+    return block;
   }
+
 
   function renderReport(report) {
     var maxScore = report.max_score || 100;
@@ -375,22 +322,27 @@
     el.reportBody.innerHTML = '';
 
     // 1. Hero overall score block
+    var tier = getVibe(report.overall_score, maxScore);
     var hero = document.createElement('div');
     hero.className = 'report-hero';
     var heroTitle = document.createElement('div');
     heroTitle.className = 'report-hero-title';
-    heroTitle.textContent = 'YOUR BEHAVIOR LAB REPORT';
+    heroTitle.textContent = tier.label;
     hero.appendChild(heroTitle);
     var vibe = document.createElement('div');
     vibe.className = 'report-vibe';
-    vibe.textContent = getVibe(report.overall_score, maxScore);
+    vibe.textContent = tier.title;
     hero.appendChild(vibe);
     var score = document.createElement('div');
     score.className = 'report-score-big';
     score.textContent = report.overall_score === null || report.overall_score === undefined
-      ? '—'
+      ? '— / ' + maxScore
       : Number(report.overall_score).toFixed(1) + ' / ' + maxScore;
     hero.appendChild(score);
+    var tierNote = document.createElement('p');
+    tierNote.className = 'report-tier-note';
+    tierNote.textContent = tier.note;
+    hero.appendChild(tierNote);
 
     // Score cards bar
     var breakdownGrid = document.createElement('div');
@@ -401,7 +353,7 @@
       item.className = 'score-breakdown-item';
       var label = document.createElement('div');
       label.className = 'score-breakdown-label';
-      label.textContent = key === 'timer' ? 'Pressure' : key === 'gaze' ? 'Gaze Recall' : key === 'deadpan' ? 'DEADPAN' : 'WobbleWalk';
+      label.textContent = window.ReportRoast.chip(key);
       var val = document.createElement('div');
       val.className = 'score-breakdown-val';
       val.textContent = (s && s.score !== undefined && s.score !== null) ? Number(s.score).toFixed(1) + '/25' : '—';
@@ -412,6 +364,19 @@
     hero.appendChild(breakdownGrid);
     el.reportBody.appendChild(hero);
 
+    // 1b. Roast band — the one-liner verdict for the whole session.
+    var roastBand = document.createElement('div');
+    roastBand.className = 'roast-band';
+    var roastKicker = document.createElement('div');
+    roastKicker.className = 'roast-kicker';
+    roastKicker.textContent = 'Verdict of the session';
+    roastBand.appendChild(roastKicker);
+    var roastQuote = document.createElement('blockquote');
+    roastQuote.className = 'roast-quote';
+    roastQuote.textContent = '“' + window.ReportRoast.overallRoast(report) + '”';
+    roastBand.appendChild(roastQuote);
+    el.reportBody.appendChild(roastBand);
+
     // 2. Activity cards
     GAME_ORDER_FOR_REPORT.forEach(function (key) {
       var summary = report.summary && report.summary[key];
@@ -419,8 +384,13 @@
       card.className = 'report-card';
 
       var heading = document.createElement('h3');
-      heading.textContent = (summary && summary.label) || (key.charAt(0).toUpperCase() + key.slice(1));
+      heading.textContent = window.ReportRoast.title(key);
       card.appendChild(heading);
+
+      var subtitle = document.createElement('div');
+      subtitle.className = 'report-card-sub';
+      subtitle.textContent = (summary && summary.label) || (key.charAt(0).toUpperCase() + key.slice(1));
+      card.appendChild(subtitle);
 
       if (summary && summary.score !== undefined && summary.score !== null) {
         var scoreLine = document.createElement('div');
@@ -432,8 +402,9 @@
       if (!summary) {
         var missing = document.createElement('p');
         missing.className = 'missing';
-        missing.textContent = 'Not completed for this session.';
+        missing.textContent = window.ReportRoast.skipped(key);
         card.appendChild(missing);
+        card.appendChild(renderResearchBlock(key));
         el.reportBody.appendChild(card);
         return;
       }
@@ -441,10 +412,19 @@
       if (summary.available === false) {
         var unavailable = document.createElement('p');
         unavailable.className = 'missing';
-        unavailable.textContent = 'Recorded, but metrics could not be computed' + (summary.reason ? ' (' + summary.reason + ').' : '.');
+        unavailable.textContent = window.ReportRoast.unavailable(key, summary.reason);
         card.appendChild(unavailable);
+        card.appendChild(renderResearchBlock(key));
         el.reportBody.appendChild(card);
         return;
+      }
+
+      var verdict = window.ReportRoast.stationVerdict(key, summary);
+      if (verdict) {
+        var verdictLine = document.createElement('p');
+        verdictLine.className = 'station-verdict';
+        verdictLine.textContent = verdict;
+        card.appendChild(verdictLine);
       }
 
       // Activity-specific rendering
@@ -453,12 +433,7 @@
         var imagesData = (gazeResultDoc && gazeResultDoc.images) || [];
 
         // Metric grid for basic gaze info
-        var gazeEntries = [
-          ['Images Viewed', '2 (Active Experiment)'],
-          ['Recall Accuracy', summary.recallScore || '—'],
-          ['Gaze Samples Captured', summary.gazeSamplesCollected || '0']
-        ];
-        card.appendChild(renderMetricGrid(gazeEntries));
+        card.appendChild(renderMetricGrid(window.ReportRoast.stationMetrics('gaze', summary)));
 
         // EXACTLY TWO gaze images with gaze paths
         var imgGrid = document.createElement('div');
@@ -468,7 +443,7 @@
           var imgCard = document.createElement('div');
           imgCard.className = 'gaze-image-card';
           var imgTitle = document.createElement('h4');
-          imgTitle.textContent = 'Image ' + imgId + ' — Gaze Path';
+          imgTitle.textContent = 'Image ' + imgId + ' — Gaze Heatmap';
           imgCard.appendChild(imgTitle);
 
           var canvasWrap = document.createElement('div');
@@ -480,7 +455,19 @@
           var imgInfo = imagesData.find(function (im) { return im.id === imgId; });
           var samples = imgInfo ? (imgInfo.samples || []) : [];
           var imgUrl = '/games/gaze-timer/Images/' + imgId + '.png';
-          renderGazeImageOverlay(canvas, imgUrl, samples);
+          window.ReportVisuals.gazeHeatmap(canvas, imgUrl, samples);
+
+          var legend = document.createElement('div');
+          legend.className = 'heat-legend';
+          legend.innerHTML = '<span>Fewer looks</span><i class="heat-ramp"></i><span>More looks</span>';
+          imgCard.appendChild(legend);
+
+          var pathNote = document.createElement('p');
+          pathNote.className = 'canvas-note';
+          pathNote.textContent = samples.length
+            ? samples.length + ' samples. The line is the order you looked, dark dot first, lime dot last.'
+            : 'No gaze samples were captured for this image.';
+          imgCard.appendChild(pathNote);
 
           imgGrid.appendChild(imgCard);
         });
@@ -520,30 +507,51 @@
           card.appendChild(qList);
         }
       } else if (key === 'wobblewalk') {
-        var wwEntries = Object.keys(summary)
-          .filter(function (k) { return k !== 'label' && k !== 'note' && k !== 'score' && k !== 'available'; })
-          .map(function (k) { return [k, summary[k]]; });
-        card.appendChild(renderMetricGrid(wwEntries));
+        card.appendChild(renderMetricGrid(window.ReportRoast.stationMetrics('wobblewalk', summary)));
 
-        // Route visualization if route points exist
+        // Deviation from the centre line, presented the way WobbleWalk presents it.
         var wwResult = state.sessionDoc && state.sessionDoc.games && state.sessionDoc.games.wobblewalk && state.sessionDoc.games.wobblewalk.result;
         if (wwResult && wwResult.route && wwResult.route.length > 0) {
           var routeWrap = document.createElement('div');
           routeWrap.className = 'route-canvas-wrap';
+
+          var routeHead = document.createElement('div');
+          routeHead.className = 'route-head';
           var routeTitle = document.createElement('h4');
-          routeTitle.textContent = 'Walked Route Replay';
-          routeTitle.style.marginBottom = '6px';
-          routeWrap.appendChild(routeTitle);
+          routeTitle.textContent = 'Deviation from the centre line';
+          routeHead.appendChild(routeTitle);
+          var routeLegend = document.createElement('div');
+          routeLegend.className = 'route-legend';
+          routeLegend.innerHTML = '<span><i class="ideal"></i>Ideal</span><span><i></i>You</span>';
+          routeHead.appendChild(routeLegend);
+          routeWrap.appendChild(routeHead);
+
           var routeCanvas = document.createElement('canvas');
           routeWrap.appendChild(routeCanvas);
-          renderRouteCanvas(routeCanvas, wwResult.route);
+          window.ReportVisuals.routeDeviation(routeCanvas, wwResult.route);
+
+          var routeNote = document.createElement('p');
+          routeNote.className = 'canvas-note';
+          routeNote.textContent = 'Start at the bottom, finish at the top. The shaded area is how far off centre you were, ' +
+            'normalised to shoulder width so standing closer to the camera does not change the number.';
+          routeWrap.appendChild(routeNote);
+
           card.appendChild(routeWrap);
         }
       } else {
-        var entries = Object.keys(summary)
-          .filter(function (k) { return k !== 'label' && k !== 'note' && k !== 'score'; })
-          .map(function (k) { return [k, summary[k]]; });
-        card.appendChild(renderMetricGrid(entries));
+        card.appendChild(renderMetricGrid(window.ReportRoast.stationMetrics(key, summary)));
+      }
+
+      var callouts = window.ReportRoast.stationCallouts(key, summary);
+      if (callouts.length) {
+        var calloutList = document.createElement('ul');
+        calloutList.className = 'station-callouts';
+        callouts.forEach(function (line) {
+          var li = document.createElement('li');
+          li.textContent = line;
+          calloutList.appendChild(li);
+        });
+        card.appendChild(calloutList);
       }
 
       if (summary.note) {
@@ -553,6 +561,8 @@
         note.textContent = summary.note;
         card.appendChild(note);
       }
+
+      card.appendChild(renderResearchBlock(key));
 
       el.reportBody.appendChild(card);
     });
