@@ -203,7 +203,10 @@
       .map(function (pt) { return { x: px(pt.x), y: py(pt.y) }; });
 
     // Deviation band: the gap between where they walked and the line they were
-    // asked to walk, which is the whole measurement in one shape.
+    // asked to walk, which is the whole measurement in one shape. One closed
+    // polygon is enough — y only ever advances, so each segment's lobe sits in
+    // its own horizontal band and none of them overlap for the nonzero fill
+    // rule to cancel, however hard the walk zig-zags across the centre.
     if (pts.length > 1) {
       ctx.beginPath();
       ctx.moveTo(px(50), pts[0].y);
