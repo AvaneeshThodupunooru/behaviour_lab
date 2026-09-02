@@ -491,7 +491,7 @@
           var pathNote = document.createElement('p');
           pathNote.className = 'canvas-note';
           pathNote.textContent = samples.length
-            ? samples.length + ' samples. The line is the order you looked, dark dot first, lime dot last.'
+            ? samples.length + ' samples. Red is where you stared hardest, blue is a glance.'
             : 'No gaze samples were captured for this image.';
           imgCard.appendChild(pathNote);
 

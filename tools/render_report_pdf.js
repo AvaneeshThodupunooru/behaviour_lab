@@ -224,7 +224,7 @@ function gazeFigures(sessionDoc) {
       <canvas data-gaze="${id}" width="600" height="400"></canvas>
       <div class="heat-legend"><span>Fewer looks</span><i class="heat-ramp"></i><span>More looks</span></div>
       <p class="figure-note">${count
-        ? `${count} samples. The line is the order they looked — dark dot first, lime dot last.`
+        ? `${count} samples. Red is where they stared hardest, blue is a glance.`
         : 'No gaze samples were captured for this image.'}</p>
     </div>`;
   }).join('');

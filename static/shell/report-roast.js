@@ -364,7 +364,7 @@
       'Viewing scenes like these, studies repeatedly report group-level differences in social attention — less time on faces and eyes, more on objects, background, and edges.',
       'The paradigm needs no language and no instruction-following, so it can be run on toddlers. That is why it appears so often in work on early identification.',
       'In 2022 the FDA authorised an eye-tracking-based device (EarliPoint Evaluation) as an aid in diagnosing autism in children aged 16-30 months — alongside clinical judgement, explicitly not instead of it.',
-      'Order matters as much as dwell time. The sequence a scan path takes is studied as its own signal, which is why this report draws the path and not only the heat.',
+      'Order matters as much as dwell time. The sequence a scan path takes is studied as its own signal, and it is not something a heatmap can show you.',
       'The distributions overlap heavily between groups. A heatmap identifies nothing on its own, and an event webcam is far coarser than lab hardware.'
     ],
     timer: [

@@ -2,7 +2,7 @@
  *
  * Two pictures the numbers cannot make on their own:
  *
- *   gazeHeatmap    where a participant dwelled on a poster, and in what order
+ *   gazeHeatmap    where a participant dwelled on a poster
  *   routeDeviation how far off the centre line they walked, WobbleWalk's own view
  *
  * Split out of shell.js so the print/PDF renderer in tools/render_report_pdf.js
@@ -18,8 +18,10 @@
   // is built on its own offscreen canvas which never receives the poster, so
   // getImageData on it is safe regardless of where the image came from.
   //
-  // Cold is transparent rather than blue, and alpha climbs with heat, so the
-  // poster stays readable everywhere except the places they actually stared.
+  // Cold is fully transparent rather than blue, and alpha climbs with heat, so
+  // the poster comes through at its own brightness everywhere except the places
+  // they actually stared. Nothing is drawn over the top of the heat — the
+  // picture answers "where did they look", and only that.
   var THERMAL = [
     [0.00, 10, 16, 70, 0],
     [0.14, 26, 58, 200, 78],
@@ -29,6 +31,16 @@
     [0.86, 255, 130, 24, 212],
     [1.00, 240, 40, 30, 230]
   ];
+
+  // Alpha a single sample lays down at its own centre: the gradient's 0 stop,
+  // 0.22 x 255. The floor below is a multiple of it and only matters when a
+  // field has no overlap at all — otherwise the field ranges against its own
+  // peak, thermal-camera style, and the legend promises exactly that relative
+  // scale. Without the floor a poster glanced at 26 separate times normalises
+  // against one sample, and every single glance comes out as the hottest thing
+  // on the page.
+  var SAMPLE_PEAK = 56;
+  var HEAT_FLOOR = SAMPLE_PEAK * 1.5;
 
   function heatColor(t) {
     var v = t < 0 ? 0 : (t > 1 ? 1 : t);
@@ -58,7 +70,12 @@
     heat.width = width;
     heat.height = height;
     var hx = heat.getContext('2d');
-    var radius = Math.max(width, height) * 0.07;
+    // The station samples slowly — a couple of dozen points for a whole poster.
+    // Measured against real sessions, anything under a tenth of the long edge
+    // leaves every sample isolated, the field flat, and the map a field of
+    // identical dots. At this radius neighbouring looks overlap into ridges and
+    // the places they kept returning to are the only ones that go warm.
+    var radius = Math.max(width, height) * 0.11;
 
     hx.globalCompositeOperation = 'lighter';
     samples.forEach(function (pt) {
@@ -84,7 +101,7 @@
       }
       if (!peak) return heat;
 
-      var denom = Math.max(peak, 48);
+      var denom = Math.max(peak, HEAT_FLOOR);
       for (i = 0; i < data.length; i += 4) {
         if (data[i + 3] === 0) continue;
         var rgba = heatColor(data[i + 3] / denom);
@@ -98,39 +115,6 @@
       return heat; // Uncoloured heat still reads as dwell density.
     }
     return heat;
-  }
-
-  // Heat answers "where did they dwell". The scan path on top answers "in what
-  // order", which is a separate finding and worth keeping visible.
-  function drawScanPath(ctx, samples, width) {
-    if (samples.length < 2) return;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-
-    ctx.beginPath();
-    samples.forEach(function (pt, idx) {
-      if (idx === 0) ctx.moveTo(pt.x, pt.y);
-      else ctx.lineTo(pt.x, pt.y);
-    });
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-    ctx.lineWidth = Math.max(3.5, width * 0.008);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(24, 33, 38, 0.6)';
-    ctx.lineWidth = Math.max(1.4, width * 0.003);
-    ctx.stroke();
-
-    var dot = Math.max(3, width * 0.0075);
-    samples.forEach(function (pt, idx) {
-      var first = idx === 0;
-      var last = idx === samples.length - 1;
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, first || last ? dot * 1.7 : dot, 0, Math.PI * 2);
-      ctx.fillStyle = first ? '#182126' : (last ? '#d9f46a' : 'rgba(255,255,255,0.75)');
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(24, 33, 38, 0.75)';
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
-    });
   }
 
   // The posters are ~2700px wide and the samples are recorded in that original
@@ -150,12 +134,7 @@
         return { x: pt.x * scale, y: pt.y * scale };
       });
       if (!points.length) return;
-      // Thermal colours need a cool base to read against; without this the
-      // poster's own bright areas compete with the low end of the ramp.
-      ctx.fillStyle = 'rgba(8, 12, 32, 0.3)';
-      ctx.fillRect(0, 0, width, height);
       ctx.drawImage(buildHeatLayer(width, height, points), 0, 0);
-      drawScanPath(ctx, points, width);
     }
 
     var img = new Image();
@@ -174,7 +153,7 @@
       ctx.fillStyle = '#f1f1ee';
       ctx.fillRect(0, 0, 600, 400);
       paint(600, 400, 600);
-      ctx.fillStyle = '#182126'; // Ink, not muted — paint() cools the base first.
+      ctx.fillStyle = '#182126';
       ctx.font = '600 15px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Poster image unavailable — gaze density only', 300, 380);
