@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "question": "What the Color of tie worn by Ranbir Kapoor(the man in the image)?",
+    "options": [
+      "Dark blue/ indigo",
+      "Black",
+      "Grey",
+      "Stripes"
+    ],
+    "correct_answer": "Black"
+  },
+  {
+    "id": 2,
+    "question": "Did Deepika Padukone (the woman in the image) wear any of the below?",
+    "options": [
+      "Earrings",
+      "Necklace",
+      "Bracelet",
+      "Hairband"
+    ],
+    "correct_answer": "Earrings"
+  }
+]

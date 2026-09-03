@@ -539,6 +539,36 @@ body.shell-report main#app { max-width: 1120px; }
 
 .rp-note--quiet { font-style: italic; }
 
+.rp-personal-comment {
+  display: grid;
+  gap: 8px;
+  margin: 22px 0;
+  padding: 24px 26px;
+  border: 3px solid var(--void-950);
+  border-left: 12px solid var(--mint);
+  border-radius: 1rem;
+  background: linear-gradient(120deg, rgba(63, 224, 160, 0.16), rgba(83, 190, 255, 0.10)), var(--void-800);
+  box-shadow: var(--hard-sm);
+}
+
+.rp-personal-comment-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+}
+
+.rp-personal-comment-text {
+  max-width: 70ch;
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.7;
+  color: rgba(255, 244, 228, 0.90);
+}
+
 .rp-research-note {
   display: grid;
   gap: 6px;

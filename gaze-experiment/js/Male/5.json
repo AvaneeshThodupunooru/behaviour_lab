@@ -1,0 +1,28 @@
+[
+  {
+    "id": 1,
+    "question": "what was the color of Headband worn by shraddha kapoor (woman in the image)",
+    "options": [
+      "Blue",
+      "Grey",
+      "Red",
+      "Black",
+      "Trick question"
+    ],
+    "correct_answer": "Red"
+  },
+  {
+    "id": 2,
+    "question": "What color shirt was the character mummy wearing(the guy beside Sushant Singh Rajput)",
+    "options": [
+      "Grey",
+      "Blue",
+      "Green",
+      "Orange",
+      "Peach",
+      "Trick question, mummy isn't in image",
+      "Who mummy?"
+    ],
+    "correct_answer": "orange"
+  }
+]

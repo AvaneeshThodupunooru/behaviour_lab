@@ -12,7 +12,7 @@
   var eventParams = EventClient.getParams();
   var participantAge = eventParams.age ? parseInt(eventParams.age, 10) : null;
   var participantGender = eventParams.gender || null;
-  var participantCategory = eventParams.category || null;
+  var participantCategory = participantAge > 21 ? 'Oldies' : participantGender;
 
   // Retry any results stranded in localStorage from a prior failed submission.
   if (eventParams.sessionId) {
@@ -90,19 +90,7 @@
     startButton.disabled = true;
     calibrationStatus.textContent = 'Loading images…';
 
-    if (participantCategory && CATEGORY_IMAGE_NUMBERS[participantCategory]) {
-      // Normal path: 2 random images out of this category's pool. Tolerant
-      // of the category not having its full 4-image set on disk yet — tops
-      // itself up from whatever images do exist. See categories.js.
-      images = await loadImagesForCategory(participantCategory, 2);
-    } else {
-      // Fallback for launching this page directly without going through
-      // the shell's participant form (no age/gender on the URL) — keeps
-      // the station usable for standalone testing instead of hard-failing.
-      console.warn('gaze-timer: no valid category on URL, falling back to the first 2 detected images.');
-      var allImages = await detectImages();
-      images = allImages.slice(0, 2);
-    }
+    images = await getImagesForParticipant(participantAge, participantGender);
 
     if (!images || images.length === 0) {
       calibrationStatus.textContent = 'No images found for this station. Please check station assets and reload.';
@@ -166,12 +154,7 @@
     calibrationStatus.textContent = 'Loading images…';
 
     try {
-      if (participantCategory && CATEGORY_IMAGE_NUMBERS[participantCategory]) {
-        images = await loadImagesForCategory(participantCategory, 2);
-      } else {
-        var allImages = await detectImages();
-        images = allImages.slice(0, 2);
-      }
+      images = await getImagesForParticipant(participantAge, participantGender);
 
       if (!images || images.length === 0) {
         throw new Error('No images found for this station. Please check station assets and reload.');

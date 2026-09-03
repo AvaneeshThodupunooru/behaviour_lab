@@ -3,10 +3,6 @@ function showScreen(id) {
   document.getElementById(id).style.display = 'block';
 }
 
-// Age/gender category (CATEGORY_IMAGE_NUMBERS, resolveCategory,
-// pickRandomNumbers, loadImagesForCategory) comes from js/categories.js,
-// shared with gaze-timer.
-
 var participantAge = null;
 var participantGender = null;
 var participantCategory = null;
@@ -17,10 +13,10 @@ function initDetailsScreen() {
   // If the shell already resolved a category (normal flow: age/gender were
   // collected on the participant-info step), skip straight to setup —
   // don't ask a second time.
-  if (eventParams.category && CATEGORY_IMAGE_NUMBERS[eventParams.category]) {
+  if (eventParams.age) {
     participantAge = eventParams.age ? parseInt(eventParams.age, 10) : null;
     participantGender = eventParams.gender || null;
-    participantCategory = eventParams.category;
+    participantCategory = participantAge > 21 ? 'Oldies' : participantGender;
     showScreen('setupScreen');
     initSetupScreen();
     return;
@@ -42,7 +38,7 @@ function initDetailsScreen() {
       errorEl.style.display = 'block';
       return;
     }
-    if (gender !== 'male' && gender !== 'female') {
+    if (age <= 21 && gender !== 'male' && gender !== 'female') {
       errorEl.textContent = 'Please select a gender.';
       errorEl.style.display = 'block';
       return;
@@ -50,13 +46,7 @@ function initDetailsScreen() {
 
     participantAge = age;
     participantGender = gender;
-    participantCategory = resolveCategory(age, gender);
-
-    if (!CATEGORY_IMAGE_NUMBERS[participantCategory]) {
-      errorEl.textContent = 'Could not resolve an image category — contact the experimenter.';
-      errorEl.style.display = 'block';
-      return;
-    }
+    participantCategory = age > 21 ? 'Oldies' : gender;
 
     errorEl.style.display = 'none';
     showScreen('setupScreen');
@@ -69,13 +59,12 @@ async function initSetupScreen() {
   const listEl = document.getElementById('imageList');
   const startBtn = document.getElementById('startExperimentBtn');
 
-  statusEl.textContent = 'Loading images for this category...';
-  // Tolerant of a category not having its full 4-image set on disk yet —
-  // tops itself up from whatever images do exist. See categories.js.
-  const images = await loadImagesForCategory(participantCategory, 2);
-
-  if (images.length === 0) {
-    statusEl.textContent = 'No images found for this category. Add the numbered image files to Images/, then reload this page.';
+  statusEl.textContent = 'Loading images and matching questions...';
+  let images;
+  try {
+    images = await getImagesForParticipant(participantAge, participantGender);
+  } catch (error) {
+    statusEl.textContent = error.message || 'Could not load the experiment images and questions.';
     return;
   }
 

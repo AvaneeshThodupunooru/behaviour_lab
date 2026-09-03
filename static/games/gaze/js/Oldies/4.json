@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "question": "What color did the left most man wear in the image?",
+    "options": [
+      "Red",
+      "Black",
+      "Blue",
+      "Brown"
+    ],
+    "correct_answer": "Blue"
+  },
+  {
+    "id": 2,
+    "question": "Who is wearing the specs?",
+    "options": [
+      "No one",
+      "Left man",
+      "Middle man",
+      "Right man",
+      "The woman"
+    ],
+    "correct_answer": "Middle man"
+  }
+]

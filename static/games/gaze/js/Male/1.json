@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "question": "What color was the zebra crossing?",
+    "options": [
+      "Black and white",
+      "Yellow and black",
+      "White and yellow",
+      "Not present in image"
+    ],
+    "correct_answer": "White and yellow"
+  },
+  {
+    "id": 2,
+    "question": "What object was the woman in the image holding?",
+    "options": [
+      "Black bag",
+      "Gray bag",
+      "Matching outfit color bag",
+      "Brown bag",
+      "Nothing"
+    ],
+    "correct_answer": "Matching outfit color bag"
+  }
+]

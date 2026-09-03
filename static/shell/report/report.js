@@ -14,7 +14,7 @@ window.Report = (function () {
   var D = window.ReportDom;
   var S = window.ReportSections;
 
-  var PAGE_BUILDERS = ['summaryPage', 'distributionPage', 'timerPage', 'gazePage', 'wobblePage', 'deadpanPage', 'finalPage'];
+  var PAGE_BUILDERS = ['summaryPage', 'distributionPage', 'timerPage', 'gazePage', 'deadpanPage', 'wobblePage', 'finalPage'];
 
   function build(report) {
     var doc = D.el('article', 'rp-doc');

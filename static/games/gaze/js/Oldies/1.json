@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "question": "Was Shah rukh khan(The man in the image) wearing a watch?",
+    "options": [
+      "Yes, black color",
+      "Yes, brown color",
+      "No,",
+      "Trick question he was wearing a devotional thread"
+    ],
+    "correct_answer": "Yes, black color"
+  },
+  {
+    "id": 2,
+    "question": "Was Deepika Padukone(the women in the image) wearing flowers on her head?",
+    "options": [
+      "Yes white color",
+      "No",
+      "Yes matching her outfit",
+      "No she was holding flowers"
+    ],
+    "correct_answer": "Yes white color"
+  }
+]

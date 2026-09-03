@@ -458,6 +458,7 @@ def summarize_wobblewalk(result: dict) -> dict:
         "directionChanges": r.get("direction_changes"),
         "driftDirection": r.get("drift_direction"),
         "score": _round(score_wobblewalk(result)),
+        "wobbleFeedback": None,
         "note": "Game performance score only, not a medical or balance assessment.",
         # --- additional recorded values used by the final report ------------
         # route is the station's own replay path: x=50 is the ideal centre
@@ -491,8 +492,8 @@ SUMMARIZERS = {
 REPORT_STATIONS = (
     ("timer", "Timer Attention / Visual Search", "Nerves", "One word search, one visible countdown."),
     ("gaze", "Gaze / Visual Memory", "Memory", "Two posters, then four questions about what was on them."),
-    ("wobblewalk", "Walking Stability / Wobble Walk", "Balance", "Spin, then walk a straight line."),
     ("deadpan", "Facial Expression / Emotional Containment", "Composure", "Try not to laugh, on camera."),
+    ("wobblewalk", "Walking Stability / Wobble Walk", "Balance", "Spin, then walk a straight line."),
 )
 
 MAX_STATION_SCORE = 25.0
@@ -529,11 +530,55 @@ def build_report(session_doc: dict) -> dict:
             summary[key] = summarizer(game_state.get("result") or {})
             summary[key]["researchNote"] = report_content.STATION_RESEARCH_NOTES.get(key)
             summary[key]["researchCaveat"] = report_content.RESEARCH_CAVEAT
+            if key == "timer":
+                comment = report_content.pick_game_feedback(
+                    key,
+                    summary[key].get("score"),
+                    session_doc.get("session_id"),
+                    {"checks": summary[key].get("timerCheckCount")},
+                )
+                summary[key]["personalComment"] = (
+                    f"Your Timer game score was {summary[key]['score']}/25. {comment}"
+                )
+            elif key == "gaze":
+                comment = report_content.pick_game_feedback(
+                    key,
+                    summary[key].get("score"),
+                    session_doc.get("session_id"),
+                    {
+                        "correct": summary[key].get("recallCorrect"),
+                        "total": summary[key].get("recallTotal"),
+                    },
+                )
+                summary[key]["personalComment"] = (
+                    f"Your Gaze game score was {summary[key]['score']}/25. {comment}"
+                )
+            elif key == "deadpan":
+                comment = report_content.pick_game_feedback(
+                    key,
+                    summary[key].get("score"),
+                    session_doc.get("session_id"),
+                    {"laughs": summary[key].get("laughCount")},
+                )
+                summary[key]["personalComment"] = (
+                    f"Your Deadpan game score was {summary[key]['score']}/25. {comment}"
+                )
+            if key == "wobblewalk" and summary[key].get("wobbleScore") is not None:
+                summary[key]["wobbleFeedback"] = report_content.pick_wobble_feedback(
+                    summary[key]["wobbleScore"], session_doc.get("session_id")
+                )
+                summary[key]["personalComment"] = (
+                    f"Your Wobble Walk game score was {summary[key]['wobbleScore']}/100. "
+                    f"{summary[key]['wobbleFeedback']}"
+                )
             score = summary[key].get("score")
             if isinstance(score, (int, float)) and math.isfinite(score):
                 scores.append(score)
     complete = len(games_completed) == len(SUMMARIZERS) and len(scores) == len(SUMMARIZERS)
-    overall_score = _round(sum(scores)) if complete else None
+    calculated_overall_score = _round(sum(scores)) if complete else None
+    overall_score = session_doc.get("overall_score")
+    if overall_score is None:
+        overall_score = calculated_overall_score
     session_id = session_doc.get("session_id")
     return {
         "session_id": session_id,
@@ -541,7 +586,7 @@ def build_report(session_doc: dict) -> dict:
         "started_at": session_doc.get("started_at"),
         "completed_at": session_doc.get("completed_at"),
         "games_completed": games_completed,
-        "overall_score": overall_score,
+        "overall_score": _round(overall_score) if overall_score is not None else None,
         "max_score": 100,
         "disclaimer": DISCLAIMER,
         "summary": summary,

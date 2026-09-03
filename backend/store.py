@@ -31,6 +31,7 @@ def _new_session_doc(session_id: str, participant_id: str, name: Optional[str]) 
         "participant": {"participant_id": participant_id, "name": name},
         "started_at": _now_iso(),
         "completed_at": None,
+        "overall_score": None,
         "games": {key: {"status": "pending"} for key in GAME_KEYS},
     }
 
@@ -85,6 +86,14 @@ class MemoryStore:
             if doc is None:
                 return None
             doc["completed_at"] = _now_iso()
+            return dict(doc)
+
+    def set_overall_score(self, session_id: str, score: float) -> Optional[dict]:
+        with self._lock:
+            doc = self._sessions.get(session_id)
+            if doc is None:
+                return None
+            doc["overall_score"] = score
             return dict(doc)
 
     def list_sessions(self) -> list[dict]:
@@ -199,6 +208,14 @@ class MongoStore:
             return_document=True,
         )
         return updated
+
+    def set_overall_score(self, session_id: str, score: float) -> Optional[dict]:
+        return self._sessions.find_one_and_update(
+            {"session_id": session_id},
+            {"$set": {"overall_score": score}},
+            projection={"_id": 0},
+            return_document=True,
+        )
 
     def list_sessions(self) -> list[dict]:
         return list(self._sessions.find({}, {"_id": 0}))

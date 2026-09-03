@@ -178,7 +178,12 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ participant_id: participantId, name: el.participantName.value.trim() || null })
       });
-      var data = await res.json();
+      var data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        throw new Error('The server could not create a session. Please try again.');
+      }
       if (!res.ok) throw new Error(data.detail || 'Could not create a session.');
       state.sessionId = data.session_id;
       state.age = age;

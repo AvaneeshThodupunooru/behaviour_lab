@@ -9,49 +9,6 @@ const Experiment = (function () {
   let questionResults = [];
   let selectedQuestions = []; // fixed random selection for this session
 
-  // -----------------------------------------------------------------
-  // Question banks — objective visual-recall questions per image.
-  // -----------------------------------------------------------------
-  const QUESTION_BANK = {
-    1: [
-      { id: 'img1-q1', prompt: 'What animal is the woman holding?', options: ['Cat', 'Rabbit', 'Dog', 'Fox'], answer: 'Cat' },
-      { id: 'img1-q2', prompt: 'What is the man holding?', options: ['A camera', 'A fish bowl', 'A book', 'A coffee cup'], answer: 'A fish bowl' },
-      { id: 'img1-q3', prompt: 'What color is the cat the woman is holding?', options: ['Orange', 'Black', 'White', 'Gray'], answer: 'Orange' },
-      { id: 'img1-q4', prompt: 'How many people are visible in the image?', options: ['1', '2', '3', '4'], answer: '2' },
-      { id: 'img1-q5', prompt: 'Is the woman standing or sitting?', options: ['Standing', 'Sitting', 'Kneeling', 'Lying down'], answer: 'Standing' },
-      { id: 'img1-q6', prompt: 'What is the man doing with the fish bowl?', options: ['Holding it in both hands', 'Balancing it on his head', 'Setting it on a table', 'Pouring water from it'], answer: 'Holding it in both hands' },
-      { id: 'img1-q7', prompt: 'Where in the image is the man positioned?', options: ['Left side', 'Right side', 'Center', 'Background'], answer: 'Right side' },
-      { id: 'img1-q8', prompt: 'Is there a visible background in the image?', options: ['Yes, an indoor scene', 'Yes, an outdoor scene', 'Plain or minimal background', 'Dark background'], answer: 'Yes, an indoor scene' }
-    ],
-    2: [
-      { id: 'img2-q1', prompt: 'What is the man in the center doing?', options: ['Raising both arms', 'Playing guitar', 'Reading', 'Running'], answer: 'Raising both arms' },
-      { id: 'img2-q2', prompt: 'What is the woman in white holding?', options: ['A phone', 'A wine glass', 'A handbag', 'A flower'], answer: 'A wine glass' },
-      { id: 'img2-q3', prompt: 'How many people are visible in the image?', options: ['2', '3', '4', '5 or more'], answer: '5 or more' },
-      { id: 'img2-q4', prompt: 'Is the scene set indoors or outdoors?', options: ['Indoors', 'Outdoors', 'Both', 'Cannot tell'], answer: 'Indoors' },
-      { id: 'img2-q5', prompt: 'What color clothing is the man in the center wearing?', options: ['White', 'Black', 'Blue', 'Red'], answer: 'White' },
-      { id: 'img2-q6', prompt: 'Are the people in the image standing or sitting?', options: ['All standing', 'All sitting', 'Mix of both', 'Cannot tell'], answer: 'All standing' },
-      { id: 'img2-q7', prompt: 'Is there any food or drink visible besides the wine glass?', options: ['Yes', 'No', 'Cannot tell', 'Only the wine glass'], answer: 'Only the wine glass' },
-      { id: 'img2-q8', prompt: 'What is the general mood of the scene?', options: ['Celebratory or festive', 'Calm and quiet', 'Tense or serious', 'Sad or somber'], answer: 'Celebratory or festive' }
-    ],
-    5: [
-      { id: 'img5-q1', prompt: 'What color was the cap?', options: ['Green', 'Blue', 'Black', 'Grey'], answer: 'Grey' },
-      { id: 'img5-q2', prompt: 'What color shirt was the guy beside Sushant Singh Rajput wearing?', options: ['Orange', 'Peach', 'Light blue', 'Green'], answer: 'Orange' }
-    ]
-  };
-
-  // -----------------------------------------------------------------
-  // Utility: pick n unique random items from an array (Fisher-Yates)
-  // -----------------------------------------------------------------
-  function pickRandom(arr, n) {
-    const copy = arr.slice();
-    const result = [];
-    for (let i = 0; i < n && copy.length > 0; i++) {
-      const idx = Math.floor(Math.random() * copy.length);
-      result.push(copy.splice(idx, 1)[0]);
-    }
-    return result;
-  }
-
   function mapGazeToImagePixels(docX, docY) {
     if (!currentImgDocRect) return null;
     const { left, top, width, height } = currentImgDocRect;
@@ -113,8 +70,7 @@ const Experiment = (function () {
   }
 
   // -----------------------------------------------------------------
-  // Combined recall screen: 4 questions (2 from each image's bank)
-  // shown ONLY after all images have been viewed.
+  // Combined recall screen shown only after all images have been viewed.
   // -----------------------------------------------------------------
   function showCombinedQuestions() {
     currentImgDocRect = null;
@@ -130,7 +86,7 @@ const Experiment = (function () {
 
     const hint = document.createElement('p');
     hint.className = 'gaze-question-hint';
-    hint.textContent = 'Answer all 4 questions about the images you just viewed, then continue.';
+    hint.textContent = `Answer all ${selectedQuestions.length} questions about the images you just viewed, then continue.`;
     card.appendChild(hint);
 
     selectedQuestions.forEach((sq, flatIndex) => {
@@ -201,14 +157,10 @@ const Experiment = (function () {
     onCompleteCb = onComplete;
     questionResults = [];
 
-    // Select 2 random unique questions from each image's bank.
-    // This selection is fixed for the duration of this session.
     selectedQuestions = [];
     images.forEach((img, imgIndex) => {
-      const bank = QUESTION_BANK[img.id] || [];
-      const picked = pickRandom(bank, 2);
-      picked.forEach(q => {
-        selectedQuestions.push({ imageIndex: imgIndex, question: q });
+      img.questions.forEach(question => {
+        selectedQuestions.push({ imageIndex: imgIndex, question });
       });
     });
 

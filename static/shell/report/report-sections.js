@@ -34,6 +34,14 @@ window.ReportSections = (function () {
     return D.el('article', 'rp-card' + (variant ? ' ' + variant : ''));
   }
 
+  function personalComment(text) {
+    if (!text) return null;
+    var panel = D.el('aside', 'rp-personal-comment');
+    D.append(panel, D.el('h3', 'rp-personal-comment-title', 'Your result')); 
+    D.append(panel, D.el('p', 'rp-personal-comment-text', text));
+    return panel;
+  }
+
   /** Local date and time, or null when the timestamp is missing/unparsable. */
   function when(iso) {
     if (!iso) return null;
@@ -211,6 +219,7 @@ window.ReportSections = (function () {
       ['Questions correct', D.isNum(g.recallCorrect) && D.isNum(g.recallTotal) ? g.recallCorrect + ' of ' + g.recallTotal : null]
     ]));
     D.append(node, top);
+    D.append(node, personalComment(g.personalComment));
 
     var heat = card('rp-card--heat');
     D.append(heat, D.el('h3', 'rp-card-title', 'Where you looked'));
@@ -279,6 +288,7 @@ window.ReportSections = (function () {
       ['Round length', D.seconds(t.roundDurationSeconds)]
     ]));
     D.append(node, top);
+    D.append(node, personalComment(t.personalComment));
 
     var timeline = Charts.clockTimeline(t.timerVisits, t.roundDurationSeconds);
     var quarters = Charts.quarters(t.checksPerQuarter);
@@ -302,7 +312,7 @@ window.ReportSections = (function () {
     if (!d) return null;
     var row = stationRow(report, 'deadpan');
     var node = page('rp-page--deadpan');
-    D.append(node, stationHead('deadpan', 'Test 4 · Facial Expression / Emotional Containment', row.blurb, d.score));
+    D.append(node, stationHead('deadpan', 'Test 3 · Facial Expression / Emotional Containment', row.blurb, d.score));
 
     var top = D.el('div', 'rp-split');
     D.append(top, D.figure(D.int(d.laughCount) || '0', 'Expression events', 'times the signal crossed the station\'s threshold', '--punch'));
@@ -316,6 +326,7 @@ window.ReportSections = (function () {
       ['Mode', D.titleCase(d.mode)]
     ]));
     D.append(node, top);
+    D.append(node, personalComment(d.personalComment));
 
     var strip = Charts.eventStrip(d.events);
     if (strip) {
@@ -331,13 +342,13 @@ window.ReportSections = (function () {
 
   var DRIFT_LABEL = { center: 'Straight', centre: 'Straight', left: 'Left', right: 'Right' };
 
-  /** Test 3 — spin, then walk the line. */
+  /** Test 4 — spin, then walk the line. */
   function wobblePage(report) {
     var w = (report.summary || {}).wobblewalk;
     if (!w) return null;
     var row = stationRow(report, 'wobblewalk');
     var node = page('rp-page--wobble');
-    D.append(node, stationHead('wobblewalk', 'Test 3 · Walking Stability / Wobble Walk', row.blurb, w.score));
+    D.append(node, stationHead('wobblewalk', 'Test 4 · Walking Stability / Wobble Walk', row.blurb, w.score));
 
     if (w.available === false) {
       D.append(node, D.note(w.reason ||
@@ -361,6 +372,7 @@ window.ReportSections = (function () {
       ['Tracked frames', D.int(w.trackedFrames), 'Camera frames in which your body was located.']
     ]));
     D.append(node, top);
+    D.append(node, personalComment(w.personalComment || w.wobbleFeedback));
 
     var pathCard = card('rp-card--path');
     D.append(pathCard, D.el('h3', 'rp-card-title', 'The line you actually walked'));

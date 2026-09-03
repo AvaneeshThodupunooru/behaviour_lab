@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "question": "Was there a straw in the glass?",
+    "options": [
+      "Yes, in the glass held by the man",
+      "No",
+      "Yes in other glass",
+      "It's tuf to decide"
+    ],
+    "correct_answer": "No"
+  },
+  {
+    "id": 2,
+    "question": "Which color of tie did Sushant Singh Rajput(the man in the image) wear?",
+    "options": [
+      "Black",
+      "Blue",
+      "Grey",
+      "Brown"
+    ],
+    "correct_answer": "Blue"
+  }
+]

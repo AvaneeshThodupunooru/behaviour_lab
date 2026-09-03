@@ -21,7 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
-from .store import build_store, GAME_KEYS
+from .store import build_store, GAME_KEYS, MemoryStore
 from .report import build_report
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,6 +48,19 @@ if not using_mongo:
         print(f"[behavior-lab] Restored {restored} session(s) from {BACKUP_PATH}", flush=True)
 
 
+def switch_to_memory_store(reason: Exception) -> None:
+    """Keep the event usable when MongoDB drops after startup."""
+    global store, using_mongo, store_note
+    if not using_mongo:
+        return
+    fallback = MemoryStore()
+    restored = fallback.load_from_file(str(BACKUP_PATH))
+    store = fallback
+    using_mongo = False
+    store_note = f"MongoDB became unavailable; using memory store: {reason}"
+    print(f"[behavior-lab] Switched to memory store ({restored} restored session(s))", flush=True)
+
+
 # ---------------------------------------------------------------------------
 # Session / game API
 # ---------------------------------------------------------------------------
@@ -68,7 +81,11 @@ def create_session(req: CreateSessionRequest):
     participant_id = (req.participant_id or "").strip()
     if not participant_id:
         raise HTTPException(400, "participant_id is required")
-    doc = store.create_session(participant_id, (req.name or "").strip() or None)
+    try:
+        doc = store.create_session(participant_id, (req.name or "").strip() or None)
+    except Exception as exc:  # MongoDB can fail after a successful startup ping.
+        switch_to_memory_store(exc)
+        doc = store.create_session(participant_id, (req.name or "").strip() or None)
     return doc
 
 
@@ -101,6 +118,9 @@ def complete_session(session_id: str):
     updated = store.complete_session(session_id)
     if updated is None:
         raise HTTPException(404, f"No session found for id {session_id!r}")
+    scored = build_report(updated)
+    if scored["overall_score"] is not None:
+        updated = store.set_overall_score(session_id, scored["overall_score"])
     if not using_mongo:
         # Best-effort full-overwrite dump; never fail the API call over it.
         try:
@@ -129,10 +149,13 @@ def get_leaderboard():
         report = build_report(session_doc)
         if len(report["games_completed"]) != len(GAME_KEYS) or report["overall_score"] is None:
             continue
+        overall_score = session_doc.get("overall_score")
+        if overall_score is None:
+            overall_score = report["overall_score"]
         entries.append({
             "session_id": session_doc.get("session_id"),
             "participant": session_doc.get("participant"),
-            "overall_score": report["overall_score"],
+            "overall_score": overall_score,
             "started_at": session_doc.get("started_at"),
             "completed_at": session_doc.get("completed_at"),
             "scores": {key: report["summary"][key]["score"] for key in GAME_KEYS},
